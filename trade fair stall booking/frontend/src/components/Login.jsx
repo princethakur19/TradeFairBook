@@ -65,7 +65,7 @@ const Login = () => {
       <div className="auth-container login-container">
         <div className="auth-icon">👤</div>
         <h1>Login</h1>
-        <p>Welcome Back Please Login To Your</p>
+        <p>Welcome Back Please Login To Your Account</p>
       </div>
 
       <form onSubmit={handleSubmit} className="login-form">

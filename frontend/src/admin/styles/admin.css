@@ -1,0 +1,359 @@
+/* admin.css */
+
+/* 1. Global Reset for Full Screen */
+html, body, #root {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100vh;
+    background-color: #0f0f0f;
+    color: #ffffff;
+    overflow-x: hidden;
+}
+
+/* 2. Fixed Navbar with Logo Fix */
+.navbar {
+    width: 100%;
+    background-color: #161616;
+    border-bottom: 1px solid #2a2a2a;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 40px;
+    height: 70px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.nav-brand { display: flex; align-items: center; gap: 12px; }
+.brand-logo-container { color: #2962ff; font-size: 1.5rem; display: flex; align-items: center; }
+.brand-text { font-size: 1.25rem; color: #2962ff; }
+.brand-bold { color: #ffffff; font-weight: 700; }
+
+.nav-links { display: flex; gap: 30px; height: 100%; }
+.nav-item {
+    background: none; border: none; color: #888;
+    cursor: pointer; font-size: 0.9rem; position: relative;
+    padding: 0 5px; height: 100%;
+}
+.nav-item.active { color: #2962ff; }
+.nav-item.active::after {
+    content: ''; position: absolute; bottom: 0; left: 0;
+    width: 100%; height: 2px; background-color: #2962ff;
+}
+
+/* 3. Fluid Main Content */
+.admin-viewport {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 40px 0;
+}
+
+.admin-fluid-card {
+    background-color: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 1400px; /* Full screen utility */
+    padding: 40px;
+}
+
+/* 4. Responsive Form Grid */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+    gap: 30px;
+}
+
+.input-group { margin-bottom: 20px; }
+.input-group label {
+    display: block; color: #999; font-size: 0.75rem;
+    font-weight: 700; margin-bottom: 10px; text-transform: uppercase;
+}
+
+.input-group input, .input-group textarea, .input-group select {
+    width: 100%; background-color: #242424; border: 1px solid #333;
+    padding: 14px; color: #fff; border-radius: 6px; font-size: 1rem;
+}
+
+.full-span { grid-column: 1 / -1; }
+
+/* 5. Blue Button Fix */
+.admin-submit-btn-wide {
+    grid-column: 1 / -1;
+    background-color: #2962ff; /* Signature Blue */
+    color: #ffffff;
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background-color 0.2s;
+}
+
+.admin-submit-btn-wide:hover { background-color: #1e4bd1; }
+
+.layout-fluid-wrapper {
+    width: 90%;
+    max-width: 1300px;
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 24px;
+    align-items: stretch;
+}
+
+.layout-controls-panel {
+    background-color: #1d1d1f;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 22px;
+}
+
+.panel-title {
+    margin: 0 0 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #323232;
+    font-size: 2rem;
+    color: #fff;
+}
+
+.control-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 16px;
+}
+
+.form-note {
+    color: #b2b2b2;
+    font-style: italic;
+    line-height: 1.4;
+    margin: 4px 0 12px;
+}
+
+.layout-visual-panel {
+    background-color: #050505;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.preview-header {
+    text-align: center;
+    color: #d1d1d1;
+    font-size: 2rem;
+    margin-bottom: 18px;
+}
+
+.visual-map-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 540px;
+}
+
+.map-row {
+    display: grid;
+    grid-template-columns: 48px repeat(5, 48px) 48px;
+    justify-content: space-between;
+    align-items: center;
+    column-gap: 10px;
+}
+
+.map-body {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 48px 1fr 48px;
+    align-items: start;
+    margin-top: 12px;
+}
+
+.side-column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.center-column-pair {
+    width: min(360px, 100%);
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 48px 48px;
+    justify-content: space-between;
+    row-gap: 12px;
+}
+
+.stall-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 4px;
+    border: 1px solid #4a4a4a;
+    background-color: #222327;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+}
+
+.top-stall {
+    border-color: #3d8fff;
+    background-color: rgba(61, 143, 255, 0.12);
+}
+
+.center-stall {
+    border-color: #da4cd7;
+    background-color: rgba(218, 76, 215, 0.1);
+}
+
+.map-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 16px;
+}
+
+.exit-sign, .entry-sign {
+    color: #00d96d;
+    font-size: 1.9rem;
+    font-weight: 700;
+}
+
+@media (max-width: 1120px) {
+    .layout-fluid-wrapper {
+        grid-template-columns: 1fr;
+    }
+
+    .map-row {
+        justify-content: center;
+        gap: 10px;
+    }
+}
+
+.manage-card {
+    max-width: 1300px;
+    padding: 24px;
+}
+
+.card-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #2e2e2e;
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+}
+
+.card-title {
+    margin: 0;
+    font-size: 1.9rem;
+    color: #fff;
+}
+
+.count-badge {
+    font-size: 1.3rem;
+    color: #9ea4b0;
+}
+
+.table-responsive-wrapper {
+    max-height: 620px;
+    overflow: auto;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.admin-table thead th {
+    color: #2f6bff;
+    font-size: 1.3rem;
+    font-weight: 700;
+    text-align: left;
+    padding: 14px 14px;
+    border-bottom: 1px solid #2e2e2e;
+}
+
+.admin-table tbody td {
+    font-size: 1.3rem;
+    color: #fff;
+    padding: 14px 14px;
+    border-bottom: 1px solid #2a2a2a;
+}
+
+.font-bold {
+    font-weight: 700;
+}
+
+.status-pill {
+    font-weight: 700;
+}
+
+.status-pill.available {
+    color: #14de67;
+}
+
+.status-pill.booked {
+    color: #ffb020;
+}
+
+.status-pill.hold {
+    color: #f08de8;
+}
+
+.status-pill.blocked {
+    color: #ff5a5a;
+}
+
+.action-cell {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.edit-icon-btn {
+    border: 1px solid #3a3a3a;
+    background: #2a2a2a;
+    color: #fff;
+    padding: 7px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+.edit-icon-btn:hover {
+    background: #353535;
+}
+
+.save-btn {
+    border-color: #2f6bff;
+}
+
+.save-btn:hover {
+    background: #2f6bff;
+}
+
+.cancel-btn {
+    border-color: #6b6b6b;
+}
+
+.table-input,
+.table-select {
+    width: 100%;
+    min-width: 120px;
+    border: 1px solid #3f3f3f;
+    background: #232323;
+    color: #fff;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 1.1rem;
+}
+
+.empty-table-msg {
+    text-align: center;
+    color: #9ea4b0;
+    padding: 28px 12px;
+}
+

@@ -57,7 +57,7 @@ const Login = () => {
       <div className="auth-page">
         <div className="auth-container">
           <h1>Login</h1>
-          <p>Trade Fair Stall Booking System</p>
+          <p>Trade Fair Stall Booking System Accc</p>
 
           <form onSubmit={handleSubmit}>
             <div className="form-group" style={{ marginBottom: "16px" }}>

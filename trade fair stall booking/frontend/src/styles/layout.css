@@ -1,0 +1,229 @@
+/* src/styles/layout.css */
+
+/* --- 0. TEXT SELECTION STYLING --- */
+::selection {
+  background-color: rgba(37, 99, 235, 0.3);
+  color: #0F172A;
+}
+
+::-moz-selection {
+  background-color: rgba(37, 99, 235, 0.3);
+  color: #0F172A;
+}
+
+/* --- 1. GLOBAL VARIABLES (Default / Light Mode) --- */
+:root {
+  --primary: #2563EB;
+  --primary-dark: #1E40AF;
+  
+  --text-main: #0F172A;
+  --text-muted: #64748B;
+  
+  --bg-body: #F8FAFC;   /* Light Gray Background */
+  --card-bg: #FFFFFF;   /* White Cards */
+  
+  --border-color: #E2E8F0;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* --- 2. DARK MODE VARIABLES --- */
+[data-theme="dark"] {
+  --text-main: #F8FAFC;  /* White Text */
+  --text-muted: #94A3B8; /* Light Gray Text */
+  
+  --bg-body: #0F172A;    /* Dark Navy Background */
+  --card-bg: #1E293B;    /* Dark Gray Cards */
+  
+  --border-color: #334155;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* --- 2B. DARK MODE TEXT SELECTION --- */
+[data-theme="dark"] ::selection {
+  background-color: rgba(37, 99, 235, 0.5);
+  color: #F8FAFC;
+}
+
+[data-theme="dark"] ::-moz-selection {
+  background-color: rgba(37, 99, 235, 0.5);
+  color: #F8FAFC;
+}
+
+/* --- 3. GLOBAL RESET --- */
+body {
+  background-color: var(--bg-body);
+  color: var(--text-main);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+}
+
+/* --- 4. NAVBAR STYLES --- */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 70px;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  z-index: 1000;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+[data-theme="dark"] .header {
+  background-color: rgba(15, 23, 42, 0.95);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.nav-container {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--primary);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.logo span { color: #0F172A; }
+
+.nav-menu {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-link {
+  font-weight: 500;
+  color: #1F2937; /* Dark text for better visibility on light backgrounds */
+  text-decoration: none;
+  transition: color 0.3s;
+  font-size: 0.95rem;
+}
+
+.nav-link:hover {
+  color: var(--primary);
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.3s;
+}
+
+.theme-toggle:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* Login Button */
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+  padding: 8px 20px;
+  border-radius: 50px;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  transition: background-color 0.3s;
+}
+.btn-primary:hover {
+  background-color: var(--primary-dark);
+}
+
+/* --- 5. FOOTER STYLES --- */
+.footer {
+  background-color: var(--bg-body); /* Should inherit variable, but explicit rule below ensures it */
+  border-top: 1px solid var(--border-color);
+  color: var(--text-muted);
+  padding: 40px 24px;
+  text-align: center;
+  margin-top: auto;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.footer p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #1F2937; /* Dark gray for visibility in light mode */
+}
+
+.footer-logo {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 12px;
+  display: block;
+}
+
+/* Dark mode footer text */
+[data-theme="dark"] .footer p {
+  color: #E2E8F0; /* Light gray for visibility in dark mode */
+}
+
+/* --- 6. DARK MODE FOOTER FIX (Explicit) --- */
+[data-theme="dark"] .footer {
+  background-color: #0F172A !important; /* Forces Dark Navy Background */
+  border-top-color: #334155;
+  color: #94A3B8;
+}
+
+/* --- 7. MOBILE RESPONSIVE --- */
+.hamburger {
+  display: none;
+  font-size: 1.5rem;
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .hamburger { display: block; }
+  
+  .nav-menu {
+    position: fixed;
+    top: 70px;
+    right: -100%;
+    width: 100%;
+    height: calc(100vh - 70px);
+    background: var(--bg-body);
+    flex-direction: column;
+    padding: 40px 24px;
+    transition: 0.4s ease;
+    box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+    z-index: 999;
+  }
+
+  .nav-menu.active { right: 0; }
+  
+  .footer { padding: 30px 20px; }
+}

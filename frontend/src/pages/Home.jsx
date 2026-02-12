@@ -12,7 +12,7 @@ import "../styles/domeSelection.css";
 const domesData = [
   {
     name: "Dome @ NSCI",
-    desc: "Keval's iconic pillar-less indoor stadium located on the sea face. Perfect for large-scale lifestyle exhibitions, concerts, and premium events.",
+    desc: "Mumbai's iconic pillar-less indoor stadium located on the sea face. Perfect for large-scale lifestyle exhibitions, concerts, and premium events.",
     price: "₹20,000",
     stalls: 50,
     img: "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcQeFJWDEGokLpauScqEuwixoqYmjdGz9wV0JvH3ckKMjO1ILb3EW7Vh0v6w6KCD",

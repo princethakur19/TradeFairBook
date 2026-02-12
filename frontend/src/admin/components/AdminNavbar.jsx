@@ -14,6 +14,12 @@ const AdminNavbar = ({ activeSection, onSectionChange, onLogout }) => {
 
       <div className="nav-links">
         <button
+          className={`nav-item ${activeSection === 'dome-report' ? 'active' : ''}`}
+          onClick={() => onSectionChange('dome-report')}
+        >
+          Dome Report
+        </button>
+        <button
           className={`nav-item ${activeSection === 'add-dome' ? 'active' : ''}`}
           onClick={() => onSectionChange('add-dome')}
         >

@@ -13,7 +13,7 @@ const domesData = [
   {
     name: "Dome @ NSCI",
     desc: "Mumbai's iconic pillar-less indoor stadium located on the sea face. Perfect for large-scale lifestyle exhibitions, concerts, and premium events.",
-    price: "₹20,000",
+    price: "₹22,000",
     stalls: 50,
     img: "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcQeFJWDEGokLpauScqEuwixoqYmjdGz9wV0JvH3ckKMjO1ILb3EW7Vh0v6w6KCD",
     badge: "MAIN ENTRANCE",
@@ -22,7 +22,7 @@ const domesData = [
   {
     name: "South AtriumJio World Convention Centre",
     desc: "Modern innovation hub equipped with high-speed internet and AC.",
-    price: "₹15,000",
+    price: "₹16,000",
     stalls: 75,
     img: "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcQCQwp7fgcM2CZkNzW-unL0O1Y_a-rnzGX3W1h0c1KV-kLUcZ7lviCgwo5lDTgZ",
     badge: "TECH HUB",

@@ -8,7 +8,7 @@
   --text-main: #0F172A;
   --text-muted: #64748B;
   
-  --bg-body: #F8FAFC;   /* Light Gray Background */
+  --bg-body: #FFFFFF;   /* White Background */
   --card-bg: #FFFFFF;   /* White Cards */
   
   --border-color: #E2E8F0;
@@ -28,8 +28,12 @@
 }
 
 /* --- 3. GLOBAL RESET --- */
+html {
+  background-color: #FFFFFF;
+}
+
 body {
-  background-color: var(--bg-body);
+  background-color: #FFFFFF;
   color: var(--text-main);
   transition: background-color 0.3s ease, color 0.3s ease;
   margin: 0;
@@ -164,6 +168,11 @@ body {
 }
 
 /* --- 6. DARK MODE FOOTER FIX (Explicit) --- */
+[data-theme="dark"] html,
+[data-theme="dark"] body {
+  background-color: #0F172A !important;
+}
+
 [data-theme="dark"] .footer {
   background-color: #0F172A !important; /* Forces Dark Navy Background */
   border-top-color: #334155;

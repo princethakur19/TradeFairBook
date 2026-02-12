@@ -8,6 +8,12 @@ import DomeSelection from "./pages/DomeSelection";
 import AdminDashboard from "./admin/pages/AdminDashboard";
 import AdminRoute from "./admin/AdminRoute";
 
+const adminDashboardElement = (
+  <AdminRoute>
+    <AdminDashboard />
+  </AdminRoute>
+);
+
 function App() {
   return (
     <Routes>
@@ -18,14 +24,10 @@ function App() {
       <Route path="/domes" element={<DomeSelection />} />
 
       {/* ADMIN ROUTES */}
-      <Route
-        path="/admin/*" // Added * to handle nested admin views if needed
-        element={
-          <AdminRoute>
-            <AdminDashboard />
-          </AdminRoute>
-        }
-      />
+      <Route path="/admin" element={adminDashboardElement} />
+      <Route path="/admin/dashboard" element={adminDashboardElement} />
+      <Route path="/admin/dashboard/:section" element={adminDashboardElement} />
+      <Route path="/admin/*" element={adminDashboardElement} />
     </Routes>
   );
 }

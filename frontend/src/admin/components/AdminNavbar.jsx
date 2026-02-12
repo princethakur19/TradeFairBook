@@ -1,32 +1,39 @@
 import React from 'react';
 
-const AdminNavbar = ({ activeSection, setActiveSection, onLogout }) => {
+const AdminNavbar = ({ activeSection, onSectionChange, onLogout }) => {
   return (
     <nav className="navbar">
-      <div className="nav-brand">
-        {/* Modern Icon Logo */}
+      <button type="button" className="nav-brand" onClick={() => onSectionChange('dome-report')}>
         <div className="brand-logo-container">
-           <i className="fas fa-landmark"></i>
+          <i className="fas fa-landmark"></i>
         </div>
         <span className="brand-text">
           TradeFair <span className="brand-bold">Book</span>
         </span>
-      </div>
-      
+      </button>
+
       <div className="nav-links">
-        <button 
+        <button
           className={`nav-item ${activeSection === 'add-dome' ? 'active' : ''}`}
-          onClick={() => setActiveSection('add-dome')}
-        >Add Dome</button>
-        <button 
+          onClick={() => onSectionChange('add-dome')}
+        >
+          Add Dome
+        </button>
+        <button
           className={`nav-item ${activeSection === 'stall-layout' ? 'active' : ''}`}
-          onClick={() => setActiveSection('stall-layout')}
-        >Stall Layout</button>
-        <button 
+          onClick={() => onSectionChange('stall-layout')}
+        >
+          Stall Layout
+        </button>
+        <button
           className={`nav-item ${activeSection === 'manage-stalls' ? 'active' : ''}`}
-          onClick={() => setActiveSection('manage-stalls')}
-        >Manage Stalls</button>
-        <button className="nav-item logout-btn" onClick={onLogout}>Logout</button>
+          onClick={() => onSectionChange('manage-stalls')}
+        >
+          Manage Stalls
+        </button>
+        <button className="nav-item logout-btn" onClick={onLogout}>
+          Logout
+        </button>
       </div>
     </nav>
   );

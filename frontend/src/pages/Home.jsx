@@ -22,7 +22,7 @@ const domesData = [
   {
     name: "South AtriumJio World Convention Centre",
     desc: "Modern innovation hub equipped with high-speed internet and AC.",
-    price: "₹15,000",
+    price: "₹16,000",
     stalls: 75,
     img: "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcQCQwp7fgcM2CZkNzW-unL0O1Y_a-rnzGX3W1h0c1KV-kLUcZ7lviCgwo5lDTgZ",
     badge: "TECH HUB",

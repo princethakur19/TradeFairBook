@@ -4,7 +4,7 @@ import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import HowItWorks from "../components/home/HowItWorks"; 
 
-// Styles
+// Stylesss
 import "../styles/layout.css"; 
 import "../styles/home.css"; 
 import "../styles/domeSelection.css"; 

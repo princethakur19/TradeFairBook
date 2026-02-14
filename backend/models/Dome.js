@@ -4,15 +4,10 @@ const domeSchema = new mongoose.Schema(
   {
     domeName: {
       type: String,
-      required: true,
-      unique: true
+      required: true
     },
     location: {
       type: String,
-      required: true
-    },
-    totalStalls: {
-      type: Number,
       required: true
     },
     description: {
@@ -23,8 +18,8 @@ const domeSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["AVAILABLE", "FULL", "INACTIVE"],
-      default: "AVAILABLE"
+      enum: ["ACTIVE", "INACTIVE"],
+      default: "ACTIVE"
     }
   },
   { timestamps: true }

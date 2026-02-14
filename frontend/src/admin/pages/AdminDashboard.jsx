@@ -5,9 +5,10 @@ import DomeReport from './DomeReport';
 import AddDome from './AddDome';
 import StallLayout from './StallLayout';
 import ManageStalls from './ManageStalls';
+import ManageDomes from './ManageDomes';
 import '../styles/admin.css';
 
-const VALID_SECTIONS = ['dome-report', 'add-dome', 'stall-layout', 'manage-stalls'];
+const VALID_SECTIONS = ['dome-report', 'add-dome', 'manage-domes', 'stall-layout', 'manage-stalls'];
 
 const getSectionFromPath = (pathName) => {
   const segments = pathName.split('/').filter(Boolean);
@@ -39,6 +40,7 @@ const AdminDashboard = () => {
       <div className="admin-viewport">
         {activeSection === 'dome-report' && <DomeReport />}
         {activeSection === 'add-dome' && <AddDome />}
+        {activeSection === 'manage-domes' && <ManageDomes />}
         {activeSection === 'stall-layout' && <StallLayout setStallsData={setStallsData} />}
         {activeSection === 'manage-stalls' && <ManageStalls stallsData={stallsData} setStallsData={setStallsData} />}
       </div>

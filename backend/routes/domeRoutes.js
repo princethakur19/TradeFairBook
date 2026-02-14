@@ -4,6 +4,7 @@ const router = express.Router();
 const {
   createDome,
   getAllDomes,
+  updateDome,
   deleteDome
 } = require("../controllers/domeController");
 
@@ -14,6 +15,7 @@ router.get("/", getAllDomes);
 
 // ADMIN
 router.post("/", protect, adminOnly, createDome);
+router.put("/:id", protect, adminOnly, updateDome);
 router.delete("/:id", protect, adminOnly, deleteDome);
 
 module.exports = router;

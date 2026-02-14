@@ -33,3 +33,29 @@ export const getAllDomes = async () => {
     throw error.response?.data || { message: "Failed to fetch domes" };
   }
 };
+
+/* ===========================
+   UPDATE DOME
+=========================== */
+export const updateDome = async (domeId, domeData) => {
+  try {
+    const response = await api.put(`/domes/${domeId}`, domeData);
+    return response.data;
+  } catch (error) {
+    console.error("Update Dome Error:", error.response?.data || error.message);
+    throw error.response?.data || { message: "Failed to update dome" };
+  }
+};
+
+/* ===========================
+   DELETE DOME
+=========================== */
+export const deleteDome = async (domeId) => {
+  try {
+    const response = await api.delete(`/domes/${domeId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Delete Dome Error:", error.response?.data || error.message);
+    throw error.response?.data || { message: "Failed to delete dome" };
+  }
+};

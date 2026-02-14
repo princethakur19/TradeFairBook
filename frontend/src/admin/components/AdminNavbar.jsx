@@ -26,6 +26,12 @@ const AdminNavbar = ({ activeSection, onSectionChange, onLogout }) => {
           Add Dome
         </button>
         <button
+          className={`nav-item ${activeSection === 'manage-domes' ? 'active' : ''}`}
+          onClick={() => onSectionChange('manage-domes')}
+        >
+          Manage Domes
+        </button>
+        <button
           className={`nav-item ${activeSection === 'stall-layout' ? 'active' : ''}`}
           onClick={() => onSectionChange('stall-layout')}
         >

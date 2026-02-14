@@ -61,6 +61,56 @@ exports.getAllDomes = async (req, res) => {
 };
 
 /* ===============================
+   UPDATE DOME
+================================= */
+exports.updateDome = async (req, res) => {
+  try {
+    const { domeName, location, description, image, status } = req.body;
+
+    if (!domeName || !location) {
+      return res.status(400).json({
+        success: false,
+        message: "Dome name and location are required"
+      });
+    }
+
+    const updatedDome = await Dome.findByIdAndUpdate(
+      req.params.id,
+      {
+        domeName,
+        location,
+        description,
+        image,
+        status
+      },
+      {
+        new: true,
+        runValidators: true
+      }
+    );
+
+    if (!updatedDome) {
+      return res.status(404).json({
+        success: false,
+        message: "Dome not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Dome updated successfully",
+      data: updatedDome
+    });
+  } catch (error) {
+    console.error("Update Dome Error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/* ===============================
    DELETE DOME
 ================================= */
 exports.deleteDome = async (req, res) => {

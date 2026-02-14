@@ -348,6 +348,14 @@ html, body, #root {
     color: #ff5a5a;
 }
 
+.status-pill.active {
+    color: #14de67;
+}
+
+.status-pill.inactive {
+    color: #ff5a5a;
+}
+
 .action-cell {
     display: flex;
     gap: 8px;
@@ -380,6 +388,22 @@ html, body, #root {
     border-color: #6b6b6b;
 }
 
+.delete-btn {
+    border-color: #7f2d2d;
+    color: #ffd6d6;
+}
+
+.delete-btn:hover {
+    background: #7f2d2d;
+    border-color: #7f2d2d;
+    color: #fff;
+}
+
+.delete-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
 .table-input,
 .table-select {
     width: 100%;
@@ -396,6 +420,61 @@ html, body, #root {
     text-align: center;
     color: #9ea4b0;
     padding: 28px 12px;
+}
+
+.manage-feedback {
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-size: 1.2rem;
+}
+
+.manage-feedback-error {
+    background: rgba(255, 80, 80, 0.15);
+    border: 1px solid rgba(255, 80, 80, 0.45);
+    color: #ffd7d7;
+}
+
+.manage-feedback-success {
+    background: rgba(20, 222, 103, 0.14);
+    border: 1px solid rgba(20, 222, 103, 0.4);
+    color: #c5ffd8;
+}
+
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.62);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1200;
+    padding: 16px;
+}
+
+.modal-card {
+    width: min(900px, 100%);
+    background-color: #1a1a1a;
+    border: 1px solid #2d2d2d;
+    border-radius: 12px;
+    padding: 24px;
+    max-height: 88vh;
+    overflow-y: auto;
+}
+
+.modal-title {
+    margin: 0 0 16px 0;
+    font-size: 1.7rem;
+    color: #fff;
+    border-bottom: 1px solid #2f2f2f;
+    padding-bottom: 10px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 8px;
 }
 
 

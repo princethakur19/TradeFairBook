@@ -1,7 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-
 require("dotenv").config();
 
 const app = express();
@@ -18,9 +17,15 @@ app.get("/", (req, res) => {
 /* Routes */
 const authRoutes = require("./routes/authRoutes");
 const domeRoutes = require("./routes/domeRoutes");
+const stallRoutes = require("./routes/stallRoutes");
+const bookingRoutes = require("./routes/bookingRoutes");
+const reportRoutes = require("./routes/reportRoutes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/domes", domeRoutes);
+app.use("/api/stalls", stallRoutes);
+app.use("/api/bookings", bookingRoutes);
+app.use("/api/reports", reportRoutes);
 
 /* MongoDB Connection */
 mongoose

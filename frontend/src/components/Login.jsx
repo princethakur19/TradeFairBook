@@ -44,8 +44,8 @@ const Login = () => {
     } catch (err) {
       setError(
         err.response?.data?.msg ||
-        err.response?.data?.message ||
-        "Login failed"
+          err.response?.data?.message ||
+          "Login failed"
       );
     } finally {
       setLoading(false);
@@ -59,7 +59,7 @@ const Login = () => {
           <h1>Login</h1>
           <p>Trade Fair Stall Booking System Accc</p>
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} autoComplete="off">
             <div className="form-group" style={{ marginBottom: "16px" }}>
               <label>Login As</label>
               <select
@@ -75,9 +75,11 @@ const Login = () => {
             <div className="form-group" style={{ marginBottom: "16px" }}>
               <input
                 type="email"
+                name="login-email"
                 placeholder="Email"
                 className="form-input"
                 value={email}
+                autoComplete="off"
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
@@ -85,9 +87,11 @@ const Login = () => {
             <div className="form-group" style={{ marginBottom: "20px" }}>
               <input
                 type="password"
+                name="login-password"
                 placeholder="Password"
                 className="form-input"
                 value={password}
+                autoComplete="new-password"
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>

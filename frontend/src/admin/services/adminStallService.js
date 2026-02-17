@@ -1,8 +1,10 @@
 import api from "../../api/axios";
 
-/* Generate stall array (C-shape style) */
+/* ======================================================
+   Generate stall array (C-shape style)
+====================================================== */
 export const generateStallArray = (config) => {
-  const { topCount, leftCount, rightCount, domeId } = config;
+  const { topCount, centerCount, leftCount, rightCount, domeId } = config;
 
   if (!domeId) {
     alert("Please select a dome first.");
@@ -44,29 +46,54 @@ export const generateStallArray = (config) => {
     });
   }
 
+  /* -------- CENTER STALLS (🔥 FIXED) -------- */
+  // Each center row has 2 stalls
+  const totalCenterStalls = (centerCount || 0) * 2;
+
+  for (let i = 1; i <= totalCenterStalls; i++) {
+    stalls.push({
+      stallNumber: `C${i}`,
+      side: "CENTER",   // MUST BE UPPERCASE (matches enum)
+      price: 6000,
+      status: "AVAILABLE",
+      dome: domeId,
+    });
+  }
+
   return stalls;
 };
 
 
-/* Save stalls to database */
+/* ======================================================
+   Save stalls to database
+====================================================== */
 export const saveStallsToDB = async (stalls) => {
   try {
     const response = await api.post("/stalls", stalls);
     return response.data;
   } catch (error) {
-    console.error("Error saving stalls:", error.response?.data || error.message);
+    console.error(
+      "Error saving stalls:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
 
 
-/* Get stalls by dome */
+/* ======================================================
+   Get stalls by dome (🔥 FIX ROUTE)
+====================================================== */
 export const getStallsByDome = async (domeId) => {
   try {
-    const response = await api.get(`/stalls/${domeId}`);
+    // Backend route is: /api/stalls/dome/:domeId
+    const response = await api.get(`/stalls/dome/${domeId}`);
     return response.data;
   } catch (error) {
-    console.error("Error fetching stalls:", error.response?.data || error.message);
+    console.error(
+      "Error fetching stalls:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };

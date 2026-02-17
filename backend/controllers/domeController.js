@@ -1,13 +1,14 @@
 const Dome = require("../models/Dome");
 
-/* ===============================
+
+/* =====================================================
    CREATE DOME
-================================= */
+===================================================== */
 exports.createDome = async (req, res) => {
   try {
     const { domeName, location, description, image, status } = req.body;
 
-    // Basic validation
+    // Validation
     if (!domeName || !location) {
       return res.status(400).json({
         success: false,
@@ -15,9 +16,19 @@ exports.createDome = async (req, res) => {
       });
     }
 
+    // Prevent duplicate dome name
+    const existingDome = await Dome.findOne({ domeName: domeName.trim() });
+
+    if (existingDome) {
+      return res.status(400).json({
+        success: false,
+        message: "Dome with this name already exists"
+      });
+    }
+
     const newDome = await Dome.create({
-      domeName,
-      location,
+      domeName: domeName.trim(),
+      location: location.trim(),
       description,
       image,
       status
@@ -38,12 +49,17 @@ exports.createDome = async (req, res) => {
   }
 };
 
-/* ===============================
+
+
+/* =====================================================
    GET ALL DOMES
-================================= */
+   (Used in dropdown filter)
+===================================================== */
 exports.getAllDomes = async (req, res) => {
   try {
-    const domes = await Dome.find().sort({ createdAt: -1 });
+    const domes = await Dome.find()
+      .select("_id domeName location status")
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -60,9 +76,11 @@ exports.getAllDomes = async (req, res) => {
   }
 };
 
-/* ===============================
+
+
+/* =====================================================
    UPDATE DOME
-================================= */
+===================================================== */
 exports.updateDome = async (req, res) => {
   try {
     const { domeName, location, description, image, status } = req.body;
@@ -77,8 +95,8 @@ exports.updateDome = async (req, res) => {
     const updatedDome = await Dome.findByIdAndUpdate(
       req.params.id,
       {
-        domeName,
-        location,
+        domeName: domeName.trim(),
+        location: location.trim(),
         description,
         image,
         status
@@ -101,6 +119,7 @@ exports.updateDome = async (req, res) => {
       message: "Dome updated successfully",
       data: updatedDome
     });
+
   } catch (error) {
     console.error("Update Dome Error:", error);
     res.status(500).json({
@@ -110,9 +129,11 @@ exports.updateDome = async (req, res) => {
   }
 };
 
-/* ===============================
+
+
+/* =====================================================
    DELETE DOME
-================================= */
+===================================================== */
 exports.deleteDome = async (req, res) => {
   try {
     const dome = await Dome.findById(req.params.id);

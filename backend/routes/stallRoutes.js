@@ -4,12 +4,20 @@ const router = express.Router();
 const {
   createStalls,
   getStallsByDome,
+  getAllStalls,
+  updateStall,
+  deleteStall
 } = require("../controllers/stallController");
 
-// Create multiple stalls
-router.post("/", createStalls);
+const { protect, adminOnly } = require("../middleware/authMiddleware");
 
-// Get stalls by dome
+// USER ROUTES
+router.get("/", getAllStalls);
 router.get("/:domeId", getStallsByDome);
+
+// ADMIN ROUTES
+router.post("/", protect, adminOnly, createStalls);
+router.put("/:id", protect, adminOnly, updateStall);
+router.delete("/:id", protect, adminOnly, deleteStall);
 
 module.exports = router;

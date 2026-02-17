@@ -3,6 +3,9 @@ import Home from "./pages/Home";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import DomeSelection from "./pages/DomeSelection";
+import StallsDisplay from "./pages/StallsDisplay";
+import StallLayoutView from "./pages/StallLayoutView";
+import UserStallLayout from "./pages/UserStallLayout";
 
 // ADMIN
 import AdminDashboard from "./admin/pages/AdminDashboard";
@@ -22,6 +25,9 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/domes" element={<DomeSelection />} />
+      <Route path="/stalls/:domeId" element={<StallsDisplay />} />
+      <Route path="/layout/:domeId" element={<StallLayoutView />} />
+      <Route path="/select-stall/:domeId" element={<UserStallLayout />} />
 
       {/* ADMIN ROUTES */}
       <Route path="/admin" element={adminDashboardElement} />

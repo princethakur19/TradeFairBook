@@ -12,7 +12,7 @@ const StallLayout = () => {
     right: 7,
   });
 
-  /* Load domes */
+  /* Load domess */
   useEffect(() => {
     const fetchDomes = async () => {
       const data = await getAllDomes();

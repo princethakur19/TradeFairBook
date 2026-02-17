@@ -10,7 +10,7 @@ const ManageStalls = () => {
   });
 
   // =============================
-  // Fetch stalls
+  // Fetch stallsss
   // =============================
   const fetchStalls = async () => {
     try {

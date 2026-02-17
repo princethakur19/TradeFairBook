@@ -4,6 +4,7 @@ const router = express.Router();
 const {
   createDome,
   getAllDomes,
+  getDomeById,
   updateDome,
   deleteDome
 } = require("../controllers/domeController");
@@ -12,6 +13,7 @@ const { protect, adminOnly } = require("../middleware/authMiddleware");
 
 // USER
 router.get("/", getAllDomes);
+router.get("/:id", getDomeById);
 
 // ADMIN
 router.post("/", protect, adminOnly, createDome);

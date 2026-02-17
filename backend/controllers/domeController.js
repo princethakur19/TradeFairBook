@@ -76,6 +76,34 @@ exports.getAllDomes = async (req, res) => {
   }
 };
 
+/* ===============================
+   GET SINGLE DOME BY ID
+================================= */
+exports.getDomeById = async (req, res) => {
+  try {
+    const dome = await Dome.findById(req.params.id);
+
+    if (!dome) {
+      return res.status(404).json({
+        success: false,
+        message: "Dome not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: dome
+    });
+
+  } catch (error) {
+    console.error("Get Dome By ID Error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 
 
 /* =====================================================

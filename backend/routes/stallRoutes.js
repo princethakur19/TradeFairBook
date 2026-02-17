@@ -9,35 +9,15 @@ const {
   deleteStall
 } = require("../controllers/stallController");
 
+const { protect, adminOnly } = require("../middleware/authMiddleware");
 
-// ===============================
-// Create multiple stalls
-// ===============================
-router.post("/", createStalls);
-
-
-// ===============================
-// Get all stalls (Manage page)
-// ===============================
+// USER ROUTES
 router.get("/", getAllStalls);
+router.get("/:domeId", getStallsByDome);
 
-
-// ===============================
-// Get stalls by dome
-// ===============================
-router.get("/dome/:domeId", getStallsByDome);
-
-
-// ===============================
-// Update stall
-// ===============================
-router.put("/:id", updateStall);
-
-
-// ===============================
-// Delete stall
-// ===============================
-router.delete("/:id", deleteStall);
-
+// ADMIN ROUTES
+router.post("/", protect, adminOnly, createStalls);
+router.put("/:id", protect, adminOnly, updateStall);
+router.delete("/:id", protect, adminOnly, deleteStall);
 
 module.exports = router;

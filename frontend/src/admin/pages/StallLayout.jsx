@@ -12,7 +12,9 @@ const StallLayout = () => {
     right: 7,
   });
 
-  /* Load domess */
+  // ===============================
+  // Load Domes
+  // ===============================
   useEffect(() => {
     const fetchDomes = async () => {
       const data = await getAllDomes();
@@ -22,13 +24,16 @@ const StallLayout = () => {
   }, []);
 
   const updateCount = (field, value, min = 0) => {
-    const parsed = Number.parseInt(value, 10);
+    const parsed = parseInt(value, 10);
     setConfig((prev) => ({
       ...prev,
-      [field]: Number.isNaN(parsed) ? min : Math.max(min, parsed),
+      [field]: isNaN(parsed) ? min : Math.max(min, parsed),
     }));
   };
 
+  // ===============================
+  // Generate & Save Layout
+  // ===============================
   const handleGenerate = async () => {
     if (!selectedDome) {
       alert("Please select dome first");
@@ -37,12 +42,14 @@ const StallLayout = () => {
 
     const stalls = generateStallArray({
       topCount: config.top,
+      centerCount: config.center,   // 🔥 FIXED
       leftCount: config.left,
       rightCount: config.right,
       domeId: selectedDome,
     });
 
     await saveStallsToDB(stalls);
+
     alert("Layout generated and saved successfully!");
   };
 
@@ -113,11 +120,13 @@ const StallLayout = () => {
         </button>
       </div>
 
-      {/* VISUAL C-SHAPE PREVIEW (RESTORED) */}
+      {/* VISUAL PREVIEW */}
       <div className="layout-visual-panel">
         <div className="preview-header">Stall Layout Preview</div>
 
         <div className="visual-map-container">
+
+          {/* TOP ROW */}
           <div
             className="map-row"
             style={{
@@ -134,6 +143,8 @@ const StallLayout = () => {
           </div>
 
           <div className="map-body">
+
+            {/* LEFT SIDE */}
             <div className="side-column">
               {[...Array(config.left - 1)].map((_, i) => (
                 <div key={i} className="stall-box">
@@ -142,6 +153,7 @@ const StallLayout = () => {
               ))}
             </div>
 
+            {/* CENTER */}
             <div className="center-column-pair">
               {[...Array(config.center)].map((_, i) => (
                 <React.Fragment key={i}>
@@ -155,6 +167,7 @@ const StallLayout = () => {
               ))}
             </div>
 
+            {/* RIGHT SIDE */}
             <div className="side-column">
               {[...Array(config.right - 1)].map((_, i) => (
                 <div key={i} className="stall-box">
@@ -162,11 +175,6 @@ const StallLayout = () => {
                 </div>
               ))}
             </div>
-          </div>
-
-          <div className="map-footer">
-            <span className="exit-sign">EXIT v</span>
-            <span className="entry-sign">^ ENTRY</span>
           </div>
         </div>
       </div>

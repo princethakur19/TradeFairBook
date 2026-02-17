@@ -1,39 +1,83 @@
-import React from 'react';
+import React, { useEffect, useState } from "react";
+import api from "../../api/axios";
 
-const ManageStalls = ({ stallsData, setStallsData }) => {
-  const [editingId, setEditingId] = React.useState(null);
-  const [editForm, setEditForm] = React.useState({ price: '', status: 'AVAILABLE' });
+const ManageStalls = () => {
+  const [stallsData, setStallsData] = useState([]);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({
+    price: "",
+    status: "AVAILABLE",
+  });
 
+  // =============================
+  // Fetch stalls
+  // =============================
+  const fetchStalls = async () => {
+    try {
+      const res = await api.get("/stalls");
+      setStallsData(res.data.data);
+    } catch (error) {
+      console.error("Fetch error:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchStalls();
+  }, []);
+
+  // =============================
+  // Start Edit
+  // =============================
   const startEdit = (stall) => {
-    setEditingId(stall.id);
-    setEditForm({ price: stall.price, status: stall.status });
+    setEditingId(stall._id);
+    setEditForm({
+      price: stall.price,
+      status: stall.status,
+    });
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setEditForm({ price: '', status: 'AVAILABLE' });
   };
 
-  const saveEdit = (stallId) => {
-    const parsedPrice = Number.parseInt(editForm.price, 10);
-    if (Number.isNaN(parsedPrice) || parsedPrice < 0) {
-      alert('Please enter a valid stall price.');
-      return;
+  // =============================
+  // Save Edit
+  // =============================
+  const saveEdit = async (id) => {
+    try {
+      await api.put(`/stalls/${id}`, {
+        price: Number(editForm.price),
+        status: editForm.status,
+      });
+
+      setEditingId(null);
+      fetchStalls();
+    } catch (error) {
+      console.error("Update error:", error);
     }
+  };
 
-    const updated = stallsData.map((stall) =>
-      stall.id === stallId ? { ...stall, price: parsedPrice, status: editForm.status } : stall
-    );
+  // =============================
+  // Delete
+  // =============================
+  const deleteStall = async (id) => {
+    if (!window.confirm("Delete this stall?")) return;
 
-    setStallsData(updated);
-    cancelEdit();
+    try {
+      await api.delete(`/stalls/${id}`);
+      fetchStalls();
+    } catch (error) {
+      console.error("Delete error:", error);
+    }
   };
 
   return (
     <div className="admin-fluid-card manage-card">
       <div className="card-header-flex">
         <h2 className="card-title">Manage Stalls</h2>
-        <span className="count-badge">{stallsData.length} Stalls Total</span>
+        <span className="count-badge">
+          {stallsData.length} Stalls Total
+        </span>
       </div>
 
       <div className="table-responsive-wrapper">
@@ -48,63 +92,96 @@ const ManageStalls = ({ stallsData, setStallsData }) => {
               <th>ACTION</th>
             </tr>
           </thead>
+
           <tbody>
-            {stallsData.length > 0 ? (
-              stallsData.map((stall) => (
-                <tr key={stall.id}>
-                  <td className="font-bold">{stall.id}</td>
-                  <td>{stall.dome}</td>
-                  <td>{stall.side}</td>
-                  <td>
-                    {editingId === stall.id ? (
-                      <input
-                        type="number"
-                        min="0"
-                        className="table-input"
-                        value={editForm.price}
-                        onChange={(e) => setEditForm((prev) => ({ ...prev, price: e.target.value }))}
-                      />
-                    ) : (
-                      stall.price
-                    )}
-                  </td>
-                  <td>
-                    {editingId === stall.id ? (
-                      <select
-                        className="table-select"
-                        value={editForm.status}
-                        onChange={(e) => setEditForm((prev) => ({ ...prev, status: e.target.value }))}
-                      >
-                        <option value="AVAILABLE">AVAILABLE</option>
-                        <option value="BOOKED">BOOKED</option>
-                        <option value="HOLD">HOLD</option>
-                        <option value="BLOCKED">BLOCKED</option>
-                      </select>
-                    ) : (
-                      <span className={`status-pill ${stall.status.toLowerCase()}`}>{stall.status}</span>
-                    )}
-                  </td>
-                  <td className="action-cell">
-                    {editingId === stall.id ? (
+            {stallsData.map((stall) => (
+              <tr key={stall._id}>
+                <td className="font-bold">{stall.stallNumber}</td>
+                <td>{stall.dome?.domeName || "N/A"}</td>
+                <td>{stall.side}</td>
+
+                {/* PRICE */}
+                <td>
+                  {editingId === stall._id ? (
+                    <input
+                      type="number"
+                      value={editForm.price}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          price: e.target.value,
+                        })
+                      }
+                      className="table-input"
+                    />
+                  ) : (
+                    `₹${stall.price}`
+                  )}
+                </td>
+
+                {/* STATUS */}
+                <td>
+                  {editingId === stall._id ? (
+                    <select
+                      value={editForm.status}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          status: e.target.value,
+                        })
+                      }
+                      className="table-select"
+                    >
+                      <option value="AVAILABLE">AVAILABLE</option>
+                      <option value="BOOKED">BOOKED</option>
+                    </select>
+                  ) : (
+                    <span
+                      className={`status-pill ${stall.status.toLowerCase()}`}
+                    >
+                      {stall.status}
+                    </span>
+                  )}
+                </td>
+
+                {/* ACTION */}
+                <td>
+                  <div className="action-buttons">
+                    {editingId === stall._id ? (
                       <>
-                        <button className="edit-icon-btn save-btn" onClick={() => saveEdit(stall.id)}>Save</button>
-                        <button className="edit-icon-btn cancel-btn" onClick={cancelEdit}>Cancel</button>
+                        <button
+                          className="edit-icon-btn save-btn"
+                          onClick={() => saveEdit(stall._id)}
+                        >
+                          Save
+                        </button>
+                        <button
+                          className="edit-icon-btn cancel-btn"
+                          onClick={cancelEdit}
+                        >
+                          Cancel
+                        </button>
                       </>
                     ) : (
-                      <button className="edit-icon-btn" onClick={() => startEdit(stall)}>
-                        Edit
-                      </button>
+                      <>
+                        <button
+                          className="edit-icon-btn"
+                          onClick={() => startEdit(stall)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="edit-icon-btn delete-btn"
+                          onClick={() => deleteStall(stall._id)}
+                        >
+                          Delete
+                        </button>
+                      </>
                     )}
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="6" className="empty-table-msg">
-                  No stalls found. Please generate a layout in the <b>Stall Layout</b> tab.
+                  </div>
                 </td>
               </tr>
-            )}
+            ))}
           </tbody>
         </table>
       </div>

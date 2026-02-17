@@ -362,6 +362,15 @@ html, body, #root {
     align-items: center;
 }
 
+.action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.edit-icon-btn {
+  min-width: 70px;
+}
+
 .edit-icon-btn {
     border: 1px solid #3a3a3a;
     background: #2a2a2a;

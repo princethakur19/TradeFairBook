@@ -1,9 +1,6 @@
-//Keeps API logic separate from UI (good architecture).
-import axios from "axios";
-
-const API_URL = "http://localhost:5000/api/domes";
+import api from "../api/axios";
 
 export const getAllDomes = async () => {
-  const response = await axios.get(API_URL);
+  const response = await api.get("/domes");
   return response.data;
 };

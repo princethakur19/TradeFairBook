@@ -1,10 +1,8 @@
-import axios from "axios";
-
-const API_URL = "http://localhost:5000/api/stalls";
+import api from "../api/axios";
 
 export const getStallsByDome = async (domeId) => {
   try {
-    const response = await axios.get(`${API_URL}/${domeId}`);
+    const response = await api.get(`/stalls/${domeId}`);
     return response.data;
   } catch (error) {
     console.error("Error fetching stalls:", error);

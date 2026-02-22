@@ -4,6 +4,7 @@ const router = express.Router();
 const {
   createStalls,
   getStallsByDome,
+  getStallById,
   getAllStalls,
   updateStall,
   deleteStall
@@ -13,6 +14,7 @@ const { protect, adminOnly } = require("../middleware/authMiddleware");
 
 // USER ROUTES
 router.get("/", getAllStalls);
+router.get("/one/:id", getStallById);
 router.get("/:domeId", getStallsByDome);
 
 // ADMIN ROUTES

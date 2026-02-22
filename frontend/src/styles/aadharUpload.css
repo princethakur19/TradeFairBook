@@ -1,0 +1,235 @@
+:root {
+  --au-bg: linear-gradient(135deg, #eef4ff 0%, #e6edf8 100%);
+  --au-card-bg: rgba(255, 255, 255, 0.92);
+  --au-card-border: #cbd5e1;
+  --au-title: #0f172a;
+  --au-muted: #64748b;
+  --au-upload-bg: #f8fafc;
+  --au-upload-border: #94a3b8;
+  --au-upload-text: #334155;
+  --au-upload-subtext: #64748b;
+  --au-button: #2563eb;
+  --au-button-hover: #1d4ed8;
+  --au-error: #dc2626;
+}
+
+[data-theme="dark"] {
+  --au-bg: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+  --au-card-bg: rgba(15, 23, 42, 0.78);
+  --au-card-border: rgba(96, 165, 250, 0.28);
+  --au-title: #f8fafc;
+  --au-muted: #cbd5e1;
+  --au-upload-bg: rgba(15, 23, 42, 0.5);
+  --au-upload-border: #60a5fa;
+  --au-upload-text: #e2e8f0;
+  --au-upload-subtext: #94a3b8;
+  --au-button: #3b82f6;
+  --au-button-hover: #2563eb;
+  --au-error: #f87171;
+}
+
+.aadhar-upload-page {
+  min-height: 100vh;
+  padding: 110px 16px 40px;
+  background: var(--au-bg);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.aadhar-upload-card {
+  width: 100%;
+  max-width: 560px;
+  background: var(--au-card-bg);
+  border: 1px solid var(--au-card-border);
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.15);
+  backdrop-filter: blur(8px);
+}
+
+.aadhar-upload-card h1 {
+  margin: 0 0 10px;
+  font-size: 32px;
+  color: var(--au-title);
+  line-height: 1.2;
+}
+
+.aadhar-subtitle {
+  margin: 0 0 20px;
+  color: var(--au-muted);
+  font-size: 15px;
+}
+
+.aadhar-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.booking-context {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--au-card-border);
+  background: var(--au-upload-bg);
+}
+
+.booking-context p {
+  margin: 4px 0;
+  color: var(--au-upload-text);
+  font-size: 14px;
+}
+
+.upload-box {
+  width: 100%;
+  min-height: 160px;
+  border: 2px dashed var(--au-upload-border);
+  border-radius: 14px;
+  background: var(--au-upload-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 16px;
+  transition: border-color 0.25s ease, transform 0.25s ease;
+}
+
+.upload-box:hover {
+  transform: translateY(-2px);
+}
+
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  color: var(--au-upload-text);
+}
+
+.upload-placeholder i {
+  font-size: 42px;
+  color: var(--au-button);
+}
+
+.upload-placeholder span {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.upload-placeholder small {
+  font-size: 13px;
+  color: var(--au-upload-subtext);
+}
+
+.aadhar-preview {
+  width: 100%;
+  max-height: 280px;
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-field label {
+  color: var(--au-upload-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.form-field input {
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--au-card-border);
+  background: var(--au-upload-bg);
+  color: var(--au-upload-text);
+  font-size: 14px;
+  padding: 0 12px;
+}
+
+.form-field input:focus {
+  outline: none;
+  border-color: var(--au-button);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
+}
+
+.consent-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--au-upload-subtext);
+  font-size: 13px;
+}
+
+.consent-row input {
+  margin-top: 2px;
+}
+
+.upload-input {
+  display: none;
+}
+
+.form-error {
+  margin: 0;
+  color: var(--au-error);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.submit-btn {
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 16px;
+  background: var(--au-button);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.25s ease, transform 0.2s ease;
+}
+
+.submit-btn:hover {
+  background: var(--au-button-hover);
+  transform: translateY(-1px);
+}
+
+.submit-btn:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@media (max-width: 640px) {
+  .aadhar-upload-page {
+    padding: 90px 10px 24px;
+  }
+
+  .aadhar-upload-card {
+    padding: 20px;
+  }
+
+  .aadhar-upload-card h1 {
+    font-size: 26px;
+  }
+
+  .upload-box {
+    min-height: 130px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}

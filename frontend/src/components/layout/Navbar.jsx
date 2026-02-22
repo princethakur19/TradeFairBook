@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { clearAuthStorage, hasValidSession } from "../../utils/auth";
 import "../../styles/layout.css"; 
 
 const Navbar = () => {
@@ -16,16 +17,14 @@ const Navbar = () => {
       setIsMobileMenuOpen(false);
 
       // 2. Check login status
-      const token = localStorage.getItem("token");
-      setIsLoggedIn(!!token);
+      setIsLoggedIn(hasValidSession());
     }, 0); // 0ms delay pushes this to the end of the queue
 
     return () => clearTimeout(timer); // Cleanup prevents memory leaks
   }, [location]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    clearAuthStorage();
     setIsLoggedIn(false);
     navigate("/login");
   };

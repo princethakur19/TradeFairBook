@@ -1,6 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const path = require("path");
 require("dotenv").config();
 
 const app = express();
@@ -14,6 +15,7 @@ app.use(
 );
 
 app.use(express.json());
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 /* Routes */
 const authRoutes = require("./routes/authRoutes");
@@ -31,6 +33,26 @@ app.use("/api/reports", reportRoutes);
 /* Test Route */
 app.get("/", (req, res) => {
   res.json({ message: "Trade Fair Backend Running Successfully" });
+});
+
+/* Error Handler */
+app.use((err, _req, res, _next) => {
+  if (!err) {
+    return res.status(500).json({ success: false, message: "Unknown server error" });
+  }
+
+  if (err.name === "MulterError" && err.code === "LIMIT_FILE_SIZE") {
+    return res.status(400).json({ success: false, message: "Aadhaar image size must be under 5MB" });
+  }
+
+  if (err.message === "Only image files are allowed") {
+    return res.status(400).json({ success: false, message: err.message });
+  }
+
+  return res.status(500).json({
+    success: false,
+    message: err.message || "Server error"
+  });
 });
 
 /* MongoDB Connection */

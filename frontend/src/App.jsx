@@ -6,6 +6,7 @@ import DomeSelection from "./pages/DomeSelection";
 import StallsDisplay from "./pages/StallsDisplay";
 import StallLayoutView from "./pages/StallLayoutView";
 import UserStallLayout from "./pages/UserStallLayout";
+import AadharUpload from "./pages/AadharUpload";
 
 // ADMIN
 import AdminDashboard from "./admin/pages/AdminDashboard";
@@ -28,6 +29,7 @@ function App() {
       <Route path="/stalls/:domeId" element={<StallsDisplay />} />
       <Route path="/layout/:domeId" element={<StallLayoutView />} />
       <Route path="/select-stall/:domeId" element={<UserStallLayout />} />
+      <Route path="/aadhar-upload/:stallId" element={<AadharUpload />} />
 
       {/* ADMIN ROUTES */}
       <Route path="/admin" element={adminDashboardElement} />

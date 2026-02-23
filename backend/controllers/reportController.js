@@ -32,7 +32,7 @@ exports.getDomeReport = async (req, res) => {
 
     const bookings = await Booking.find({ dome: domeId })
       .populate("stall", "stallNumber")
-      .populate("user", "name");
+      .populate("user", "fullname email");
 
     res.json({
       totalStalls,

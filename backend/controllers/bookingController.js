@@ -1,5 +1,6 @@
 const Booking = require("../models/Booking");
 const Stall = require("../models/Stall");
+const AadhaarVerification = require("../models/AadhaarVerification");
 
 /* ===============================
    CREATE BOOKING
@@ -7,29 +8,31 @@ const Stall = require("../models/Stall");
 exports.createBooking = async (req, res) => {
   try {
     const userId = req.user?.id;
-    const { stall, status, aadharName, aadharNumber } = req.body;
-    const normalizedAadhar = String(aadharNumber || "").replace(/\D/g, "");
-    const aadharImagePath = req.file ? `/uploads/aadhar/${req.file.filename}` : "";
+    const { stall, status, aadhaarVerificationId } = req.body || {};
 
-    // Validation
-    if (!userId || !stall) {
+    if (!userId || !stall || !aadhaarVerificationId) {
       return res.status(400).json({
         success: false,
-        message: "User and stall are required"
+        message: "User, stall and aadhaarVerificationId are required"
       });
     }
 
-    if (!aadharName || normalizedAadhar.length !== 12) {
+    if (!["PAID", "PENDING"].includes(status || "PENDING")) {
       return res.status(400).json({
         success: false,
-        message: "Valid Aadhaar name and 12-digit Aadhaar number are required"
+        message: "Invalid booking status"
       });
     }
 
-    if (!aadharImagePath) {
-      return res.status(400).json({
+    const aadhaarVerification = await AadhaarVerification.findOne({
+      _id: aadhaarVerificationId,
+      user: userId
+    });
+
+    if (!aadhaarVerification) {
+      return res.status(404).json({
         success: false,
-        message: "Aadhaar image upload is required"
+        message: "Aadhaar verification record not found for this user"
       });
     }
 
@@ -48,7 +51,6 @@ exports.createBooking = async (req, res) => {
       });
     }
 
-    // Check if stall already booked (defensive)
     const existingBooking = await Booking.findOne({ stall, status: { $in: ["PAID", "PENDING"] } });
     if (existingBooking) {
       return res.status(400).json({
@@ -57,17 +59,12 @@ exports.createBooking = async (req, res) => {
       });
     }
 
-    // Create booking
     const booking = await Booking.create({
       user: userId,
       stall,
       dome: stallDoc.dome,
       amount: stallDoc.price,
-      aadharName: aadharName.trim(),
-      aadharNumber: normalizedAadhar,
-      aadharVerified: true,
-      aadharSubmittedAt: new Date(),
-      aadharImage: aadharImagePath,
+      aadhaarVerification: aadhaarVerification._id,
       status: status || "PENDING"
     });
 
@@ -77,7 +74,12 @@ exports.createBooking = async (req, res) => {
     });
 
     // Populate references
-    const populatedBooking = await booking.populate("user stall dome");
+    const populatedBooking = await booking.populate([
+      { path: "user", select: "fullname email phone company" },
+      { path: "stall", select: "stallNumber side price" },
+      { path: "dome", select: "domeName location" },
+      { path: "aadhaarVerification", select: "-aadhaarNumber" }
+    ]);
 
     res.status(201).json({
       success: true,
@@ -101,9 +103,10 @@ exports.getUserBookings = async (req, res) => {
     const userId = req.params.userId;
 
     const bookings = await Booking.find({ user: userId })
-      .populate("user", "name email")
+      .populate("user", "fullname email")
       .populate("stall", "stallNumber side price")
       .populate("dome", "domeName location")
+      .populate("aadhaarVerification", "-aadhaarNumber")
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -127,9 +130,10 @@ exports.getUserBookings = async (req, res) => {
 exports.getAllBookings = async (req, res) => {
   try {
     const bookings = await Booking.find()
-      .populate("user", "name email")
+      .populate("user", "fullname email")
       .populate("stall", "stallNumber side price")
       .populate("dome", "domeName location")
+      .populate("aadhaarVerification", "-aadhaarNumber")
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -166,7 +170,12 @@ exports.updateBookingStatus = async (req, res) => {
       bookingId,
       { status },
       { new: true, runValidators: true }
-    ).populate("user stall dome");
+    ).populate([
+      { path: "user", select: "fullname email phone company" },
+      { path: "stall", select: "stallNumber side price" },
+      { path: "dome", select: "domeName location" },
+      { path: "aadhaarVerification", select: "-aadhaarNumber" }
+    ]);
 
     if (!booking) {
       return res.status(404).json({

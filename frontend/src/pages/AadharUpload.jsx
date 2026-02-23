@@ -125,19 +125,26 @@ const AadharUpload = () => {
       setLoading(true);
       setError("");
 
-      const formData = new FormData();
-      formData.append("stall", stallId);
-      formData.append("dome", bookingContext.domeId);
-      formData.append("amount", bookingContext.amount);
-      formData.append("aadharName", aadharName.trim());
-      formData.append("aadharNumber", cleanedAadhar);
-      formData.append("status", "PENDING");
-      formData.append("aadharImage", aadharImage);
+      const aadhaarFormData = new FormData();
+      aadhaarFormData.append("aadhaarName", aadharName.trim());
+      aadhaarFormData.append("aadhaarNumber", cleanedAadhar);
+      aadhaarFormData.append("aadhaarImage", aadharImage);
 
-      await api.post("/bookings", formData, {
+      const aadhaarRes = await api.post("/aadhaar/submit", aadhaarFormData, {
         headers: {
           "Content-Type": "multipart/form-data"
         }
+      });
+
+      const aadhaarVerificationId = aadhaarRes?.data?.data?._id;
+      if (!aadhaarVerificationId) {
+        throw new Error("Aadhaar verification ID missing in response");
+      }
+
+      await api.post("/bookings/create", {
+        stall: stallId,
+        aadhaarVerificationId,
+        status: "PENDING"
       });
 
       alert("Verification successful. Stall booked successfully.");

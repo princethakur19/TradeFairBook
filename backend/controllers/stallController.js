@@ -203,3 +203,27 @@ exports.deleteStall = async (req, res) => {
     });
   }
 };
+
+// Get single stall by id
+exports.getStallById = async (req, res) => {
+  try {
+    const stall = await Stall.findById(req.params.id).populate("dome", "domeName location");
+
+    if (!stall) {
+      return res.status(404).json({
+        success: false,
+        message: "Stall not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: stall
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};

@@ -14,6 +14,25 @@ const bookingSchema = new mongoose.Schema({
     ref: "Dome"
   },
   amount: Number,
+  aadharName: {
+    type: String,
+    trim: true
+  },
+  aadharNumber: {
+    type: String,
+    trim: true
+  },
+  aadharVerified: {
+    type: Boolean,
+    default: false
+  },
+  aadharSubmittedAt: {
+    type: Date
+  },
+  aadharImage: {
+    type: String,
+    trim: true
+  },
   status: {
     type: String,
     enum: ["PAID", "PENDING"],

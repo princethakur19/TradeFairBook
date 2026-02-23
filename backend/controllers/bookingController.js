@@ -6,17 +6,49 @@ const Stall = require("../models/Stall");
 ================================= */
 exports.createBooking = async (req, res) => {
   try {
-    const { user, stall, dome, amount, status } = req.body;
+    const userId = req.user?.id;
+    const { stall, status, aadharName, aadharNumber } = req.body;
+    const normalizedAadhar = String(aadharNumber || "").replace(/\D/g, "");
+    const aadharImagePath = req.file ? `/uploads/aadhar/${req.file.filename}` : "";
 
     // Validation
-    if (!user || !stall || !dome || !amount) {
+    if (!userId || !stall) {
       return res.status(400).json({
         success: false,
-        message: "User, stall, dome, and amount are required"
+        message: "User and stall are required"
       });
     }
 
-    // Check if stall already booked
+    if (!aadharName || normalizedAadhar.length !== 12) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid Aadhaar name and 12-digit Aadhaar number are required"
+      });
+    }
+
+    if (!aadharImagePath) {
+      return res.status(400).json({
+        success: false,
+        message: "Aadhaar image upload is required"
+      });
+    }
+
+    const stallDoc = await Stall.findById(stall);
+    if (!stallDoc) {
+      return res.status(404).json({
+        success: false,
+        message: "Stall not found"
+      });
+    }
+
+    if (stallDoc.status !== "AVAILABLE") {
+      return res.status(400).json({
+        success: false,
+        message: "This stall is not available for booking"
+      });
+    }
+
+    // Check if stall already booked (defensive)
     const existingBooking = await Booking.findOne({ stall, status: { $in: ["PAID", "PENDING"] } });
     if (existingBooking) {
       return res.status(400).json({
@@ -27,10 +59,15 @@ exports.createBooking = async (req, res) => {
 
     // Create booking
     const booking = await Booking.create({
-      user,
+      user: userId,
       stall,
-      dome,
-      amount,
+      dome: stallDoc.dome,
+      amount: stallDoc.price,
+      aadharName: aadharName.trim(),
+      aadharNumber: normalizedAadhar,
+      aadharVerified: true,
+      aadharSubmittedAt: new Date(),
+      aadharImage: aadharImagePath,
       status: status || "PENDING"
     });
 

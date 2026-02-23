@@ -9,9 +9,10 @@ const {
 } = require("../controllers/bookingController");
 
 const { protect, adminOnly } = require("../middleware/authMiddleware");
+const { uploadAadharImage } = require("../middleware/uploadMiddleware");
 
 // USER ROUTES
-router.post("/", protect, createBooking);
+router.post("/", protect, uploadAadharImage.single("aadharImage"), createBooking);
 router.get("/user/:userId", protect, getUserBookings);
 router.delete("/:id", protect, cancelBooking);
 

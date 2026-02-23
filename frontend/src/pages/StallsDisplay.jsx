@@ -4,6 +4,7 @@ import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import api from "../api/axios";
 import { getStallsByDome } from "../services/stallService";
+import { getLoggedInUserId } from "../utils/auth";
 import "../styles/stallsDisplay.css";
 
 const StallsDisplay = () => {
@@ -71,30 +72,24 @@ const StallsDisplay = () => {
   const handleConfirmBooking = useCallback(async () => {
     if (!selectedStall) return;
 
-    try {
-      const userId = localStorage.getItem("userId");
-      if (!userId) {
-        alert("Please log in to book a stall.");
-        return;
-      }
-
-      await api.post("/bookings", {
-        user: userId,
-        stall: selectedStall._id,
-        dome: domeId,
-        amount: selectedStall.price,
-        status: "PENDING"
-      });
-
-      alert("Stall booked successfully!");
-      setShowBookingModal(false);
-      setSelectedStall(null);
-      fetchStalls();
-    } catch (error) {
-      console.error("Error booking stall:", error);
-      alert("Failed to book stall. Please try again.");
+    const userId = getLoggedInUserId();
+    if (!userId) {
+      alert("Please log in to continue.");
+      navigate("/login");
+      return;
     }
-  }, [domeId, fetchStalls, selectedStall]);
+
+    setShowBookingModal(false);
+    navigate(`/aadhar-upload/${selectedStall._id}`, {
+      state: {
+        bookingContext: {
+          domeId,
+          amount: selectedStall.price,
+          stallNumber: selectedStall.stallNumber
+        }
+      }
+    });
+  }, [domeId, navigate, selectedStall]);
 
   if (loading) {
     return (
@@ -114,13 +109,13 @@ const StallsDisplay = () => {
       <main className="stalls-container">
         <section className="stalls-header">
           <div className="header-top">
-            <button className="back-btn" onClick={() => navigate("/domes")}>
+            <button className="back-btn header-action-btn" onClick={() => navigate("/domes")}>
               Back to Domes
             </button>
-            <button className="view-toggle-btn" onClick={() => navigate(`/select-stall/${domeId}`)}>
+            <button className="view-toggle-btn header-action-btn" onClick={() => navigate(`/select-stall/${domeId}`)}>
               Select Stall
             </button>
-            <button className="view-toggle-btn" onClick={() => navigate(`/layout/${domeId}`)}>
+            <button className="view-toggle-btn header-action-btn" onClick={() => navigate(`/layout/${domeId}`)}>
               Layout View
             </button>
           </div>

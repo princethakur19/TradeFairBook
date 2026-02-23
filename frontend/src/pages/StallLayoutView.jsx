@@ -4,6 +4,7 @@ import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import api from "../api/axios";
 import { getStallsByDome } from "../services/stallService";
+import { getLoggedInUserId } from "../utils/auth";
 import "../styles/stallLayoutView.css";
 
 const STALL_NUMBER_REGEX = /\d+/;
@@ -127,31 +128,24 @@ const StallLayoutView = () => {
   const handleConfirmBooking = useCallback(async () => {
     if (!selectedStall) return;
 
-    try {
-      const userId = localStorage.getItem("userId");
-      if (!userId) {
-        alert("Please log in to book a stall.");
-        navigate("/login");
-        return;
-      }
-
-      await api.post("/bookings", {
-        user: userId,
-        stall: selectedStall._id,
-        dome: domeId,
-        amount: selectedStall.price,
-        status: "PENDING"
-      });
-
-      alert("Stall booked successfully!");
-      setShowBookingModal(false);
-      setSelectedStall(null);
-      fetchStalls();
-    } catch (error) {
-      console.error("Error booking stall:", error);
-      alert("Failed to book stall. Please try again.");
+    const userId = getLoggedInUserId();
+    if (!userId) {
+      alert("Please log in to continue.");
+      navigate("/login");
+      return;
     }
-  }, [domeId, fetchStalls, navigate, selectedStall]);
+
+    setShowBookingModal(false);
+    navigate(`/aadhar-upload/${selectedStall._id}`, {
+      state: {
+        bookingContext: {
+          domeId,
+          amount: selectedStall.price,
+          stallNumber: selectedStall.stallNumber
+        }
+      }
+    });
+  }, [domeId, navigate, selectedStall]);
 
   if (loading) {
     return (

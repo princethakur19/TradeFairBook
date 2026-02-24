@@ -298,6 +298,14 @@ html, body, #root {
     color: #9ea4b0;
 }
 
+.manage-filter-row {
+    margin-bottom: 10px;
+}
+
+.manage-dome-select {
+    max-width: 360px;
+}
+
 .table-responsive-wrapper {
     max-height: 620px;
     overflow: auto;

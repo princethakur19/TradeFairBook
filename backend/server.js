@@ -22,11 +22,13 @@ const authRoutes = require("./routes/authRoutes");
 const domeRoutes = require("./routes/domeRoutes");
 const stallRoutes = require("./routes/stallRoutes");
 const bookingRoutes = require("./routes/bookingRoutes");
+const aadhaarRoutes = require("./routes/aadhaarRoutes");
 const reportRoutes = require("./routes/reportRoutes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/domes", domeRoutes);
 app.use("/api/stalls", stallRoutes);
+app.use("/api/aadhaar", aadhaarRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/reports", reportRoutes);
 

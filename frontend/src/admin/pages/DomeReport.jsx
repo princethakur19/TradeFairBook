@@ -128,7 +128,7 @@ const DomeReport = () => {
             {filteredBookings.length > 0 ? (
               filteredBookings.map((booking) => (
                 <tr key={booking._id}>
-                  <td>{booking.user?.name || "N/A"}</td>
+                  <td>{booking.user?.fullname || booking.user?.name || "N/A"}</td>
                   <td>{booking.stall?.stallNumber || "N/A"}</td>
                   <td>{booking.status}</td>
                   <td>{formatInr(booking.amount)}</td>

@@ -1,7 +1,16 @@
 import React, { useEffect, useState } from "react";
 import api from "../../api/axios";
 
+const formatInr = (value) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value || 0);
+
 const ManageStalls = () => {
+  const [domes, setDomes] = useState([]);
+  const [selectedDomeId, setSelectedDomeId] = useState("");
   const [stallsData, setStallsData] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({
@@ -9,25 +18,35 @@ const ManageStalls = () => {
     status: "AVAILABLE",
   });
 
-  // =============================
-  // Fetch stallsss
-  // =============================
+  const fetchDomes = async () => {
+    try {
+      const res = await api.get("/domes");
+      setDomes(res.data?.data || []);
+    } catch (error) {
+      console.error("Dome fetch error:", error);
+      setDomes([]);
+    }
+  };
+
   const fetchStalls = async () => {
     try {
       const res = await api.get("/stalls");
-      setStallsData(res.data.data);
+      setStallsData(res.data?.data || []);
     } catch (error) {
       console.error("Fetch error:", error);
+      setStallsData([]);
     }
   };
 
   useEffect(() => {
+    fetchDomes();
     fetchStalls();
   }, []);
 
-  // =============================
-  // Start Edit
-  // =============================
+  const filteredStalls = selectedDomeId
+    ? stallsData.filter((stall) => stall.dome?._id === selectedDomeId)
+    : stallsData;
+
   const startEdit = (stall) => {
     setEditingId(stall._id);
     setEditForm({
@@ -40,9 +59,6 @@ const ManageStalls = () => {
     setEditingId(null);
   };
 
-  // =============================
-  // Save Edit
-  // =============================
   const saveEdit = async (id) => {
     try {
       await api.put(`/stalls/${id}`, {
@@ -57,9 +73,6 @@ const ManageStalls = () => {
     }
   };
 
-  // =============================
-  // Delete
-  // =============================
   const deleteStall = async (id) => {
     if (!window.confirm("Delete this stall?")) return;
 
@@ -75,9 +88,24 @@ const ManageStalls = () => {
     <div className="admin-fluid-card manage-card">
       <div className="card-header-flex">
         <h2 className="card-title">Manage Stalls</h2>
-        <span className="count-badge">
-          {stallsData.length} Stalls Total
-        </span>
+        <span className="count-badge">{filteredStalls.length} Stalls</span>
+      </div>
+
+      <div className="manage-filter-row">
+        <div className="input-group manage-dome-select">
+          <label>Select Dome</label>
+          <select
+            value={selectedDomeId}
+            onChange={(e) => setSelectedDomeId(e.target.value)}
+          >
+            <option value="">All Domes</option>
+            {domes.map((dome) => (
+              <option key={dome._id} value={dome._id}>
+                {dome.domeName}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="table-responsive-wrapper">
@@ -94,13 +122,11 @@ const ManageStalls = () => {
           </thead>
 
           <tbody>
-            {stallsData.map((stall) => (
+            {filteredStalls.map((stall) => (
               <tr key={stall._id}>
                 <td className="font-bold">{stall.stallNumber}</td>
                 <td>{stall.dome?.domeName || "N/A"}</td>
                 <td>{stall.side}</td>
-
-                {/* PRICE */}
                 <td>
                   {editingId === stall._id ? (
                     <input
@@ -115,11 +141,9 @@ const ManageStalls = () => {
                       className="table-input"
                     />
                   ) : (
-                    `₹${stall.price}`
+                    formatInr(stall.price)
                   )}
                 </td>
-
-                {/* STATUS */}
                 <td>
                   {editingId === stall._id ? (
                     <select
@@ -136,15 +160,11 @@ const ManageStalls = () => {
                       <option value="BOOKED">BOOKED</option>
                     </select>
                   ) : (
-                    <span
-                      className={`status-pill ${stall.status.toLowerCase()}`}
-                    >
+                    <span className={`status-pill ${stall.status.toLowerCase()}`}>
                       {stall.status}
                     </span>
                   )}
                 </td>
-
-                {/* ACTION */}
                 <td>
                   <div className="action-buttons">
                     {editingId === stall._id ? (
@@ -155,19 +175,13 @@ const ManageStalls = () => {
                         >
                           Save
                         </button>
-                        <button
-                          className="edit-icon-btn cancel-btn"
-                          onClick={cancelEdit}
-                        >
+                        <button className="edit-icon-btn cancel-btn" onClick={cancelEdit}>
                           Cancel
                         </button>
                       </>
                     ) : (
                       <>
-                        <button
-                          className="edit-icon-btn"
-                          onClick={() => startEdit(stall)}
-                        >
+                        <button className="edit-icon-btn" onClick={() => startEdit(stall)}>
                           Edit
                         </button>
                         <button
@@ -182,6 +196,13 @@ const ManageStalls = () => {
                 </td>
               </tr>
             ))}
+            {!filteredStalls.length ? (
+              <tr>
+                <td colSpan="6" className="empty-table-msg">
+                  No stalls found for the selected dome.
+                </td>
+              </tr>
+            ) : null}
           </tbody>
         </table>
       </div>

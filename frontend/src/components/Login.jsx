@@ -6,7 +6,7 @@ import "../styles/auth.css";
 const Login = () => {
   const navigate = useNavigate();
 
-  const [role, setRole] = useState("user");
+  const [role, setRole] = useState("USER");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -36,7 +36,7 @@ const Login = () => {
       localStorage.setItem("token", data.token);
       localStorage.setItem("role", data.role);
 
-      if (data.role === "admin") {
+      if (["ADMIN", "SUPER_ADMIN"].includes(String(data.role || "").toUpperCase())) {
         navigate("/admin");
       } else {
         navigate("/");
@@ -67,8 +67,9 @@ const Login = () => {
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
               >
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
+                <option value="USER">User</option>
+                <option value="ADMIN">Admin</option>
+                <option value="SUPER_ADMIN">Super Admin</option>
               </select>
             </div>
 

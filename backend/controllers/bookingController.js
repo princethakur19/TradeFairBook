@@ -2,6 +2,33 @@ const Booking = require("../models/Booking");
 const Stall = require("../models/Stall");
 const AadhaarVerification = require("../models/AadhaarVerification");
 
+const BOOKING_STATUSES = ["PENDING", "APPROVED", "REJECTED", "CANCELLED"];
+const ACTIVE_BOOKING_STATUSES = ["PENDING", "APPROVED", "PAID"];
+const TERMINAL_BOOKING_STATUSES = ["REJECTED", "CANCELLED"];
+
+const bookingPopulate = [
+  { path: "user", select: "fullname email" },
+  { path: "stall", select: "stallNumber side price" },
+  { path: "dome", select: "domeName location" },
+  { path: "aadhaarVerification", select: "-aadhaarNumber" }
+];
+
+const normalizeStatus = (value) => String(value || "").toUpperCase();
+
+const syncStallStatusForBooking = async (bookingId) => {
+  const booking = await Booking.findById(bookingId).select("stall");
+  if (!booking?.stall) return;
+
+  const activeCount = await Booking.countDocuments({
+    stall: booking.stall,
+    status: { $in: ACTIVE_BOOKING_STATUSES }
+  });
+
+  await Stall.findByIdAndUpdate(booking.stall, {
+    status: activeCount > 0 ? "BOOKED" : "AVAILABLE"
+  });
+};
+
 /* ===============================
    CREATE BOOKING
 ================================= */
@@ -9,6 +36,7 @@ exports.createBooking = async (req, res) => {
   try {
     const userId = req.user?.id;
     const { stall, status, aadhaarVerificationId } = req.body || {};
+    const normalizedStatus = normalizeStatus(status || "PENDING");
 
     if (!userId || !stall || !aadhaarVerificationId) {
       return res.status(400).json({
@@ -17,7 +45,7 @@ exports.createBooking = async (req, res) => {
       });
     }
 
-    if (!["PAID", "PENDING"].includes(status || "PENDING")) {
+    if (!BOOKING_STATUSES.includes(normalizedStatus)) {
       return res.status(400).json({
         success: false,
         message: "Invalid booking status"
@@ -44,14 +72,11 @@ exports.createBooking = async (req, res) => {
       });
     }
 
-    if (stallDoc.status !== "AVAILABLE") {
-      return res.status(400).json({
-        success: false,
-        message: "This stall is not available for booking"
-      });
-    }
+    const existingBooking = await Booking.findOne({
+      stall,
+      status: { $in: ACTIVE_BOOKING_STATUSES }
+    });
 
-    const existingBooking = await Booking.findOne({ stall, status: { $in: ["PAID", "PENDING"] } });
     if (existingBooking) {
       return res.status(400).json({
         success: false,
@@ -65,30 +90,21 @@ exports.createBooking = async (req, res) => {
       dome: stallDoc.dome,
       amount: stallDoc.price,
       aadhaarVerification: aadhaarVerification._id,
-      status: status || "PENDING"
+      status: normalizedStatus
     });
 
-    // Update stall status to BOOKED
-    await Stall.findByIdAndUpdate(stall, {
-      status: "BOOKED"
-    });
+    await syncStallStatusForBooking(booking._id);
 
-    // Populate references
-    const populatedBooking = await booking.populate([
-      { path: "user", select: "fullname email phone company" },
-      { path: "stall", select: "stallNumber side price" },
-      { path: "dome", select: "domeName location" },
-      { path: "aadhaarVerification", select: "-aadhaarNumber" }
-    ]);
+    const populatedBooking = await Booking.findById(booking._id).populate(bookingPopulate);
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Booking created successfully",
       data: populatedBooking
     });
   } catch (error) {
     console.error("Create Booking Error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message
     });
@@ -102,22 +118,25 @@ exports.getUserBookings = async (req, res) => {
   try {
     const userId = req.params.userId;
 
+    if (String(req.user?.role || "").toUpperCase() === "USER" && req.user.id !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to view these bookings"
+      });
+    }
+
     const bookings = await Booking.find({ user: userId })
-      .populate("user", "fullname email")
-      .populate("stall", "stallNumber side price")
-      .populate("dome", "domeName location")
-      .populate("aadhaarVerification", "-aadhaarNumber")
+      .populate(bookingPopulate)
       .sort({ createdAt: -1 });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       count: bookings.length,
       data: bookings
     });
-
   } catch (error) {
     console.error("Get User Bookings Error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message
     });
@@ -125,26 +144,22 @@ exports.getUserBookings = async (req, res) => {
 };
 
 /* ===============================
-   GET ALL BOOKINGS (ADMIN)
+   GET ALL BOOKINGS (ADMIN - LEGACY API)
 ================================= */
-exports.getAllBookings = async (req, res) => {
+exports.getAllBookings = async (_req, res) => {
   try {
     const bookings = await Booking.find()
-      .populate("user", "fullname email")
-      .populate("stall", "stallNumber side price")
-      .populate("dome", "domeName location")
-      .populate("aadhaarVerification", "-aadhaarNumber")
+      .populate(bookingPopulate)
       .sort({ createdAt: -1 });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       count: bookings.length,
       data: bookings
     });
-
   } catch (error) {
     console.error("Get All Bookings Error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message
     });
@@ -152,31 +167,21 @@ exports.getAllBookings = async (req, res) => {
 };
 
 /* ===============================
-   UPDATE BOOKING STATUS
+   UPDATE BOOKING STATUS (LEGACY API)
 ================================= */
 exports.updateBookingStatus = async (req, res) => {
   try {
-    const { status } = req.body;
-    const bookingId = req.params.id;
+    const rawStatus = req.body?.status;
+    const normalizedStatus = normalizeStatus(rawStatus === "PAID" ? "APPROVED" : rawStatus);
 
-    if (!status || !["PAID", "PENDING"].includes(status)) {
+    if (!BOOKING_STATUSES.includes(normalizedStatus)) {
       return res.status(400).json({
         success: false,
         message: "Invalid status"
       });
     }
 
-    const booking = await Booking.findByIdAndUpdate(
-      bookingId,
-      { status },
-      { new: true, runValidators: true }
-    ).populate([
-      { path: "user", select: "fullname email phone company" },
-      { path: "stall", select: "stallNumber side price" },
-      { path: "dome", select: "domeName location" },
-      { path: "aadhaarVerification", select: "-aadhaarNumber" }
-    ]);
-
+    const booking = await Booking.findById(req.params.id);
     if (!booking) {
       return res.status(404).json({
         success: false,
@@ -184,15 +189,20 @@ exports.updateBookingStatus = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    booking.status = normalizedStatus;
+    await booking.save();
+    await syncStallStatusForBooking(booking._id);
+
+    const updatedBooking = await Booking.findById(booking._id).populate(bookingPopulate);
+
+    return res.status(200).json({
       success: true,
       message: "Booking status updated successfully",
-      data: booking
+      data: updatedBooking
     });
-
   } catch (error) {
     console.error("Update Booking Status Error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message
     });
@@ -200,13 +210,11 @@ exports.updateBookingStatus = async (req, res) => {
 };
 
 /* ===============================
-   CANCEL BOOKING
+   CANCEL BOOKING (USER OR ADMIN)
 ================================= */
 exports.cancelBooking = async (req, res) => {
   try {
-    const bookingId = req.params.id;
-
-    const booking = await Booking.findById(bookingId);
+    const booking = await Booking.findById(req.params.id);
 
     if (!booking) {
       return res.status(404).json({
@@ -215,24 +223,35 @@ exports.cancelBooking = async (req, res) => {
       });
     }
 
-    // Release the stall
-    await Stall.findByIdAndUpdate(booking.stall, {
-      status: "AVAILABLE"
-    });
+    const role = String(req.user?.role || "").toUpperCase();
+    const canManageAll = role === "ADMIN" || role === "SUPER_ADMIN";
+    if (!canManageAll && String(booking.user) !== String(req.user?.id)) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to cancel this booking"
+      });
+    }
 
-    // Delete the booking
-    await Booking.findByIdAndDelete(bookingId);
+    booking.status = "CANCELLED";
+    await booking.save();
+    await syncStallStatusForBooking(booking._id);
 
-    res.status(200).json({
+    const updatedBooking = await Booking.findById(booking._id).populate(bookingPopulate);
+
+    return res.status(200).json({
       success: true,
-      message: "Booking cancelled successfully"
+      message: "Booking cancelled successfully",
+      data: updatedBooking
     });
-
   } catch (error) {
     console.error("Cancel Booking Error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message
     });
   }
 };
+
+exports.BOOKING_STATUSES = BOOKING_STATUSES;
+exports.ACTIVE_BOOKING_STATUSES = ACTIVE_BOOKING_STATUSES;
+exports.TERMINAL_BOOKING_STATUSES = TERMINAL_BOOKING_STATUSES;

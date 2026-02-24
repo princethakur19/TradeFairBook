@@ -6,14 +6,16 @@ import AddDome from './AddDome';
 import StallLayout from './StallLayout';
 import ManageStalls from './ManageStalls';
 import ManageDomes from './ManageDomes';
+import DashboardStats from './DashboardStats';
+import BookingManagement from './BookingManagement';
 import '../styles/admin.css';
 
-const VALID_SECTIONS = ['dome-report', 'add-dome', 'manage-domes', 'stall-layout', 'manage-stalls'];
+const VALID_SECTIONS = ['dashboard-stats', 'dome-report', 'add-dome', 'manage-domes', 'stall-layout', 'manage-stalls', 'manage-bookings'];
 
 const getSectionFromPath = (pathName) => {
   const segments = pathName.split('/').filter(Boolean);
   const maybeSection = segments[2];
-  return VALID_SECTIONS.includes(maybeSection) ? maybeSection : 'dome-report';
+  return VALID_SECTIONS.includes(maybeSection) ? maybeSection : 'dashboard-stats';
 };
 
 const AdminDashboard = () => {
@@ -38,11 +40,13 @@ const AdminDashboard = () => {
     <div className="admin-root">
       <AdminNavbar activeSection={activeSection} onSectionChange={handleSectionChange} onLogout={handleLogout} />
       <div className="admin-viewport">
+        {activeSection === 'dashboard-stats' && <DashboardStats />}
         {activeSection === 'dome-report' && <DomeReport />}
         {activeSection === 'add-dome' && <AddDome />}
         {activeSection === 'manage-domes' && <ManageDomes />}
         {activeSection === 'stall-layout' && <StallLayout setStallsData={setStallsData} />}
         {activeSection === 'manage-stalls' && <ManageStalls stallsData={stallsData} setStallsData={setStallsData} />}
+        {activeSection === 'manage-bookings' && <BookingManagement />}
       </div>
     </div>
   );

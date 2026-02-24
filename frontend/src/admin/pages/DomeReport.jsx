@@ -108,8 +108,10 @@ const DomeReport = () => {
           onChange={(e) => setStatusFilter(e.target.value)}
         >
           <option value="ALL">All Status</option>
-          <option value="PAID">Paid</option>
+          <option value="APPROVED">Approved</option>
           <option value="PENDING">Pending</option>
+          <option value="REJECTED">Rejected</option>
+          <option value="CANCELLED">Cancelled</option>
         </select>
       </div>
 

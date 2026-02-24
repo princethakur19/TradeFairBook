@@ -19,7 +19,7 @@ exports.getDomeReport = async (req, res) => {
       {
         $match: {
           dome: new mongoose.Types.ObjectId(domeId),
-          status: "PAID"
+          status: { $in: ["APPROVED", "PAID"] }
         }
       },
       {

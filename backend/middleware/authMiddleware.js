@@ -10,7 +10,10 @@ exports.protect = (req, res, next) => {
   try {
     token = token.split(" ")[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+    req.user = {
+      ...decoded,
+      role: String(decoded.role || "").toUpperCase()
+    };
     next();
   } catch (error) {
     res.status(401).json({ message: "Token invalid" });
@@ -18,8 +21,18 @@ exports.protect = (req, res, next) => {
 };
 
 exports.adminOnly = (req, res, next) => {
-  if (req.user.role !== "admin") {
-    return res.status(403).json({ message: "Admin access only" });
+  return exports.authorizeRoles("ADMIN", "SUPER_ADMIN")(req, res, next);
+};
+
+exports.authorizeRoles = (...roles) => (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ message: "Not authorized" });
   }
+
+  const normalizedAllowedRoles = roles.map((role) => String(role).toUpperCase());
+  if (!normalizedAllowedRoles.includes(String(req.user.role || "").toUpperCase())) {
+    return res.status(403).json({ message: "You are not allowed to access this resource" });
+  }
+
   next();
 };

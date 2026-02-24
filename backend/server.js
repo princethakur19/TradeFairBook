@@ -24,6 +24,7 @@ const stallRoutes = require("./routes/stallRoutes");
 const bookingRoutes = require("./routes/bookingRoutes");
 const aadhaarRoutes = require("./routes/aadhaarRoutes");
 const reportRoutes = require("./routes/reportRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/domes", domeRoutes);
@@ -31,6 +32,7 @@ app.use("/api/stalls", stallRoutes);
 app.use("/api/aadhaar", aadhaarRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/admin", adminRoutes);
 
 /* Test Route */
 app.get("/", (req, res) => {

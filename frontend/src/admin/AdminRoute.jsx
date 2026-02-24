@@ -5,8 +5,8 @@ import './styles/admin.css';
 
 const AdminRoute = ({ children }) => {
   const token = localStorage.getItem('token');
-  const role = localStorage.getItem('role');
-  const isAdmin = Boolean(token) && role === 'admin';
+  const role = String(localStorage.getItem('role') || '').toUpperCase();
+  const isAdmin = Boolean(token) && (role === 'ADMIN' || role === 'SUPER_ADMIN');
 
   if (!isAdmin) {
     return <Navigate to="/login" replace />;

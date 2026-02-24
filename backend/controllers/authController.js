@@ -2,7 +2,9 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-// REGISTER (ONLY USER) bnm
+const normalizeRole = (role) => String(role || "").trim().toUpperCase();
+
+// REGISTER (ONLY USER)
 const register = async (req, res) => {
   try {
     const { fullname, company, email, phone, password } = req.body;
@@ -20,16 +22,16 @@ const register = async (req, res) => {
       email,
       phone,
       password: hashedPassword,
-      role: "user", // 🔒 always user
+      role: "USER"
     });
 
-    res.status(201).json({ msg: "User registered successfully" });
-  } catch (err) {
-    res.status(500).json({ msg: "Server error" });
+    return res.status(201).json({ msg: "User registered successfully" });
+  } catch (_err) {
+    return res.status(500).json({ msg: "Server error" });
   }
 };
 
-// LOGIN (USER & ADMIN)
+// LOGIN (USER, ADMIN, SUPER_ADMIN)
 const login = async (req, res) => {
   try {
     const { email, password, role } = req.body;
@@ -39,10 +41,12 @@ const login = async (req, res) => {
       return res.status(400).json({ msg: "Invalid credentials" });
     }
 
-    // 🔐 ROLE VALIDATION (IMPORTANT)
-    if (role && user.role !== role) {
+    const normalizedUserRole = normalizeRole(user.role);
+    const normalizedRequestedRole = normalizeRole(role);
+
+    if (normalizedRequestedRole && normalizedUserRole !== normalizedRequestedRole) {
       return res.status(403).json({
-        msg: `Access denied. You are not registered as ${role}`,
+        msg: `Access denied. You are not registered as ${normalizedRequestedRole}`
       });
     }
 
@@ -52,18 +56,18 @@ const login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      { id: user._id, role: normalizedUserRole },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
 
-    res.json({
+    return res.json({
       success: true,
       token,
-      role: user.role,
+      role: normalizedUserRole
     });
-  } catch (err) {
-    res.status(500).json({ msg: "Server error" });
+  } catch (_err) {
+    return res.status(500).json({ msg: "Server error" });
   }
 };
 

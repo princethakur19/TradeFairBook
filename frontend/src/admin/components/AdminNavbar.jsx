@@ -3,7 +3,7 @@ import React from 'react';
 const AdminNavbar = ({ activeSection, onSectionChange, onLogout }) => {
   return (
     <nav className="navbar">
-      <button type="button" className="nav-brand" onClick={() => onSectionChange('dome-report')}>
+      <button type="button" className="nav-brand" onClick={() => onSectionChange('dashboard-stats')}>
         <div className="brand-logo-container">
           <i className="fas fa-landmark"></i>
         </div>
@@ -13,6 +13,12 @@ const AdminNavbar = ({ activeSection, onSectionChange, onLogout }) => {
       </button>
 
       <div className="nav-links">
+        <button
+          className={`nav-item ${activeSection === 'dashboard-stats' ? 'active' : ''}`}
+          onClick={() => onSectionChange('dashboard-stats')}
+        >
+          Dashboard
+        </button>
         <button
           className={`nav-item ${activeSection === 'dome-report' ? 'active' : ''}`}
           onClick={() => onSectionChange('dome-report')}
@@ -42,6 +48,12 @@ const AdminNavbar = ({ activeSection, onSectionChange, onLogout }) => {
           onClick={() => onSectionChange('manage-stalls')}
         >
           Manage Stalls
+        </button>
+        <button
+          className={`nav-item ${activeSection === 'manage-bookings' ? 'active' : ''}`}
+          onClick={() => onSectionChange('manage-bookings')}
+        >
+          Manage Bookings
         </button>
         <button className="nav-item logout-btn" onClick={onLogout}>
           Logout

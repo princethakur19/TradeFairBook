@@ -120,16 +120,6 @@ const DomeSelection = () => {
                         <div className="dome-btn-row">
                           <button
                             type="button"
-                            className="dome-btn dome-btn-secondary"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              navigate(`/layout/${dome._id}`);
-                            }}
-                          >
-                            <i className="fas fa-vector-square"></i> Layout
-                          </button>
-                          <button
-                            type="button"
                             className="dome-btn"
                             onClick={(event) => {
                               event.stopPropagation();

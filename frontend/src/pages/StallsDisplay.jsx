@@ -115,9 +115,6 @@ const StallsDisplay = () => {
             <button className="view-toggle-btn header-action-btn" onClick={() => navigate(`/select-stall/${domeId}`)}>
               Select Stall
             </button>
-            <button className="view-toggle-btn header-action-btn" onClick={() => navigate(`/layout/${domeId}`)}>
-              Layout View
-            </button>
           </div>
           <h1>Available Stalls</h1>
           {domeData && (

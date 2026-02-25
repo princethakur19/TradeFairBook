@@ -39,7 +39,13 @@ const Login = () => {
       if (["ADMIN", "SUPER_ADMIN"].includes(String(data.role || "").toUpperCase())) {
         navigate("/admin");
       } else {
-        navigate("/");
+        const redirectAfterLogin = localStorage.getItem("redirectAfterLogin");
+        if (redirectAfterLogin) {
+          localStorage.removeItem("redirectAfterLogin");
+          navigate(redirectAfterLogin);
+        } else {
+          navigate("/");
+        }
       }
     } catch (err) {
       setError(

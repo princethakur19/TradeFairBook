@@ -59,6 +59,11 @@ exports.getAllDomes = async (req, res) => {
       Dome.find().sort({ createdAt: -1 }).lean(),
       Stall.aggregate([
         {
+          $match: {
+            dome: { $exists: true, $ne: null }
+          }
+        },
+        {
           $group: {
             _id: "$dome",
             totalStalls: { $sum: 1 },
@@ -79,6 +84,7 @@ exports.getAllDomes = async (req, res) => {
     ]);
 
     const statsByDome = stallStats.reduce((acc, item) => {
+      if (!item?._id) return acc;
       acc[item._id.toString()] = item;
       return acc;
     }, {});

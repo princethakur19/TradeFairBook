@@ -62,8 +62,9 @@ const BookingManagement = () => {
         status: selectedStatus,
         dome: selectedDome
       });
-      setBookings(res.data || []);
-      setTotalPages(res.totalPages || 1);
+      const bookingRows = Array.isArray(res?.data) ? res.data : [];
+      setBookings(bookingRows);
+      setTotalPages(Number(res?.totalPages) || 1);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load bookings.");
       setBookings([]);

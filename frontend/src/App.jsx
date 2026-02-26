@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Login from "./components/Login";
 import Register from "./components/Register";
+import UserRoute from "./components/UserRoute";
 import DomeSelection from "./pages/DomeSelection";
 import StallsDisplay from "./pages/StallsDisplay";
 import UserStallLayout from "./pages/UserStallLayout";
@@ -18,6 +19,8 @@ const adminDashboardElement = (
 );
 
 function App() {
+  const userStallsElement = (element) => <UserRoute>{element}</UserRoute>;
+
   return (
     <Routes>
       {/* USER ROUTES */}
@@ -25,9 +28,9 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/domes" element={<DomeSelection />} />
-      <Route path="/stalls/:domeId" element={<StallsDisplay />} />
-      <Route path="/select-stall/:domeId" element={<UserStallLayout />} />
-      <Route path="/aadhar-upload/:stallId" element={<AadharUpload />} />
+      <Route path="/stalls/:domeId" element={userStallsElement(<StallsDisplay />)} />
+      <Route path="/select-stall/:domeId" element={userStallsElement(<UserStallLayout />)} />
+      <Route path="/aadhar-upload/:stallId" element={userStallsElement(<AadharUpload />)} />
 
       {/* ADMIN ROUTES */}
       <Route path="/admin" element={adminDashboardElement} />

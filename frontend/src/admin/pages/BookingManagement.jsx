@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import api from "../../api/axios";
 import {
   approveBooking,
@@ -47,12 +47,12 @@ const BookingManagement = () => {
     try {
       const res = await api.get("/domes");
       setDomes(res.data?.data || []);
-    } catch (_err) {
+    } catch {
       setDomes([]);
     }
   };
 
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -71,7 +71,7 @@ const BookingManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, limit, selectedStatus, selectedDome]);
 
   useEffect(() => {
     fetchDomes();
@@ -79,7 +79,7 @@ const BookingManagement = () => {
 
   useEffect(() => {
     fetchBookings();
-  }, [page, selectedStatus, selectedDome]);
+  }, [fetchBookings]);
 
   const runAction = async (action, bookingId) => {
     try {

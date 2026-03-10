@@ -1,65 +1,49 @@
 import React from 'react';
 
 const AdminNavbar = ({ activeSection, onSectionChange, onLogout }) => {
-  return (
-    <nav className="navbar">
-      <button type="button" className="nav-brand" onClick={() => onSectionChange('dashboard-stats')}>
-        <div className="brand-logo-container">
-          <i className="fas fa-landmark"></i>
-        </div>
-        <span className="brand-text">
-          TradeFair <span className="brand-bold">Book</span>
-        </span>
-      </button>
+  const navItems = [
+    { key: 'dashboard-stats', label: 'Dashboard' },
+    { key: 'dome-report', label: 'Dome Report' },
+    { key: 'add-dome', label: 'Add Dome' },
+    { key: 'manage-domes', label: 'Manage Domes' },
+    { key: 'stall-layout', label: 'Stall Layout' },
+    { key: 'manage-stalls', label: 'Manage Stalls' },
+    { key: 'manage-bookings', label: 'Manage Bookings' }
+  ];
 
-      <div className="nav-links">
-        <button
-          className={`nav-item ${activeSection === 'dashboard-stats' ? 'active' : ''}`}
-          onClick={() => onSectionChange('dashboard-stats')}
-        >
-          Dashboard
+  return (
+    <aside className="admin-sidebar">
+      <div className="admin-sidebar-top">
+        <button type="button" className="nav-brand" onClick={() => onSectionChange('dashboard-stats')}>
+          <div className="brand-logo-container">
+            <i className="fas fa-landmark"></i>
+          </div>
+          <span className="brand-text">
+            TradeFair <span className="brand-bold">Book</span>
+          </span>
         </button>
-        <button
-          className={`nav-item ${activeSection === 'dome-report' ? 'active' : ''}`}
-          onClick={() => onSectionChange('dome-report')}
-        >
-          Dome Report
-        </button>
-        <button
-          className={`nav-item ${activeSection === 'add-dome' ? 'active' : ''}`}
-          onClick={() => onSectionChange('add-dome')}
-        >
-          Add Dome
-        </button>
-        <button
-          className={`nav-item ${activeSection === 'manage-domes' ? 'active' : ''}`}
-          onClick={() => onSectionChange('manage-domes')}
-        >
-          Manage Domes
-        </button>
-        <button
-          className={`nav-item ${activeSection === 'stall-layout' ? 'active' : ''}`}
-          onClick={() => onSectionChange('stall-layout')}
-        >
-          Stall Layout
-        </button>
-        <button
-          className={`nav-item ${activeSection === 'manage-stalls' ? 'active' : ''}`}
-          onClick={() => onSectionChange('manage-stalls')}
-        >
-          Manage Stalls
-        </button>
-        <button
-          className={`nav-item ${activeSection === 'manage-bookings' ? 'active' : ''}`}
-          onClick={() => onSectionChange('manage-bookings')}
-        >
-          Manage Bookings
-        </button>
+
+        <div className="admin-sidebar-label">Admin Panel</div>
+
+        <nav className="nav-links" aria-label="Admin navigation">
+          {navItems.map((item) => (
+            <button
+              key={item.key}
+              className={`nav-item ${activeSection === item.key ? 'active' : ''}`}
+              onClick={() => onSectionChange(item.key)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      <div className="admin-sidebar-footer">
         <button className="nav-item logout-btn" onClick={onLogout}>
           Logout
         </button>
       </div>
-    </nav>
+    </aside>
   );
 };
 

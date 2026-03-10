@@ -14,6 +14,7 @@ const bookingPopulate = [
 ];
 
 const normalizeStatus = (value) => String(value || "").toUpperCase();
+const toObjectIdString = (value) => String(value || "").trim();
 
 const syncStallStatusForBooking = async (bookingId) => {
   const booking = await Booking.findById(bookingId).select("stall");
@@ -35,13 +36,15 @@ const syncStallStatusForBooking = async (bookingId) => {
 exports.createBooking = async (req, res) => {
   try {
     const userId = req.user?.id;
-    const { stall, status, aadhaarVerificationId } = req.body || {};
+    const { stall, stallIds, status, aadhaarVerificationId } = req.body || {};
     const normalizedStatus = normalizeStatus(status || "PENDING");
+    const requestedStallIds = Array.isArray(stallIds) ? stallIds : stall ? [stall] : [];
+    const normalizedStallIds = [...new Set(requestedStallIds.map(toObjectIdString).filter(Boolean))];
 
-    if (!userId || !stall || !aadhaarVerificationId) {
+    if (!userId || !normalizedStallIds.length || !aadhaarVerificationId) {
       return res.status(400).json({
         success: false,
-        message: "User, stall and aadhaarVerificationId are required"
+        message: "User, at least one stall and aadhaarVerificationId are required"
       });
     }
 
@@ -64,43 +67,69 @@ exports.createBooking = async (req, res) => {
       });
     }
 
-    const stallDoc = await Stall.findById(stall);
-    if (!stallDoc) {
+    const stallDocs = await Stall.find({ _id: { $in: normalizedStallIds } }).select("price dome");
+    if (stallDocs.length !== normalizedStallIds.length) {
       return res.status(404).json({
         success: false,
-        message: "Stall not found"
+        message: "One or more selected stalls were not found"
       });
     }
 
-    const existingBooking = await Booking.findOne({
-      stall,
-      status: { $in: ACTIVE_BOOKING_STATUSES }
-    });
-
-    if (existingBooking) {
+    const uniqueDomeIds = [...new Set(stallDocs.map((stallDoc) => String(stallDoc.dome)))];
+    if (uniqueDomeIds.length > 1) {
       return res.status(400).json({
         success: false,
-        message: "This stall is already booked"
+        message: "Please select stalls from a single dome in one booking request"
       });
     }
 
-    const booking = await Booking.create({
-      user: userId,
-      stall,
-      dome: stallDoc.dome,
-      amount: stallDoc.price,
-      aadhaarVerification: aadhaarVerification._id,
-      status: normalizedStatus
+    const existingBookings = await Booking.find({
+      stall: { $in: normalizedStallIds },
+      status: { $in: ACTIVE_BOOKING_STATUSES }
+    }).select("stall");
+
+    if (existingBookings.length) {
+      const blockedIds = new Set(existingBookings.map((booking) => String(booking.stall)));
+      const blockedStalls = normalizedStallIds.filter((stallId) => blockedIds.has(stallId));
+      return res.status(400).json({
+        success: false,
+        message:
+          blockedStalls.length === 1
+            ? "Selected stall is already booked"
+            : "Some selected stalls are already booked",
+        bookedStallIds: blockedStalls
+      });
+    }
+
+    const stallDocMap = new Map(stallDocs.map((stallDoc) => [String(stallDoc._id), stallDoc]));
+    const bookingsPayload = normalizedStallIds.map((stallId) => {
+      const stallDoc = stallDocMap.get(stallId);
+      return {
+        user: userId,
+        stall: stallId,
+        dome: stallDoc.dome,
+        amount: stallDoc.price,
+        aadhaarVerification: aadhaarVerification._id,
+        status: normalizedStatus
+      };
     });
 
-    await syncStallStatusForBooking(booking._id);
+    const createdBookings = await Booking.insertMany(bookingsPayload);
+    await Promise.all(createdBookings.map((booking) => syncStallStatusForBooking(booking._id)));
 
-    const populatedBooking = await Booking.findById(booking._id).populate(bookingPopulate);
+    const createdBookingIds = createdBookings.map((booking) => booking._id);
+    const populatedBookings = await Booking.find({ _id: { $in: createdBookingIds } })
+      .populate(bookingPopulate)
+      .sort({ createdAt: -1 });
 
     return res.status(201).json({
       success: true,
-      message: "Booking created successfully",
-      data: populatedBooking
+      message:
+        populatedBookings.length === 1
+          ? "Booking created successfully"
+          : `${populatedBookings.length} bookings created successfully`,
+      count: populatedBookings.length,
+      data: populatedBookings.length === 1 ? populatedBookings[0] : populatedBookings
     });
   } catch (error) {
     console.error("Create Booking Error:", error);

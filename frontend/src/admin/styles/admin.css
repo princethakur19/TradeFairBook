@@ -11,20 +11,30 @@ html, body, #root {
     overflow-x: hidden;
 }
 
-/* 2. Fixed Navbar with Logo Fix */
-.navbar {
-    width: 100%;
-    background: linear-gradient(180deg, #121317 0%, #101116 100%);
-    border-bottom: 1px solid #262a33;
+/* 2. Admin Shell */
+.admin-root {
+    min-height: 100vh;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 36px;
-    height: 74px;
+    background:
+        radial-gradient(circle at top left, rgba(41, 98, 255, 0.14), transparent 24%),
+        linear-gradient(180deg, #0e1014 0%, #090b0e 100%);
+}
+
+.admin-sidebar {
+    width: 290px;
+    min-height: 100vh;
+    background: linear-gradient(180deg, #121317 0%, #0d0f14 100%);
+    border-right: 1px solid #262a33;
+    padding: 28px 18px 24px;
     position: sticky;
     top: 0;
-    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-self: flex-start;
+    box-sizing: border-box;
     backdrop-filter: blur(8px);
+    box-shadow: 18px 0 50px rgba(0, 0, 0, 0.2);
 }
 
 .nav-brand {
@@ -33,70 +43,128 @@ html, body, #root {
     gap: 12px;
     background: none;
     border: none;
-    padding: 0;
+    padding: 0 8px 18px;
     cursor: pointer;
+    width: 100%;
+    text-align: left;
+    border-bottom: 1px solid #232833;
 }
-.brand-logo-container { color: #2962ff; font-size: 1.5rem; display: flex; align-items: center; }
-.brand-text { font-size: 1.25rem; color: #2962ff; }
+
+.brand-logo-container {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    color: #2962ff;
+    font-size: 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(41, 98, 255, 0.12);
+    border: 1px solid rgba(72, 120, 255, 0.22);
+}
+
+.brand-text {
+    font-size: 1.4rem;
+    color: #2962ff;
+    line-height: 1.15;
+    display: flex;
+    flex-direction: column;
+}
+
 .brand-bold { color: #ffffff; font-weight: 700; }
+
+.admin-sidebar-top {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.admin-sidebar-label {
+    color: #71809a;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    padding: 0 10px;
+}
 
 .nav-links {
     display: flex;
-    gap: 8px;
-    height: 100%;
-    align-items: center;
+    flex-direction: column;
+    gap: 10px;
 }
+
 .nav-item {
-    background: transparent;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.02);
     border: 1px solid transparent;
     color: #9aa4b6;
     cursor: pointer;
-    font-size: 1.45rem;
+    font-size: 1.02rem;
     font-weight: 600;
     position: relative;
-    padding: 10px 14px;
-    height: auto;
-    border-radius: 8px;
-    transition: color 0.2s ease, transform 0.2s ease;
+    padding: 14px 16px;
+    min-height: 54px;
+    border-radius: 14px;
+    transition: color 0.2s ease, transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+    text-align: left;
 }
+
 .nav-item:hover {
     color: #d4e2ff;
     transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: #2b3953;
 }
 
 .nav-item.active {
     color: #ffffff;
-    background: transparent;
-    border-color: transparent;
+    background: linear-gradient(135deg, rgba(41, 98, 255, 0.24), rgba(41, 98, 255, 0.08));
+    border-color: rgba(80, 129, 255, 0.32);
+    box-shadow: inset 0 0 0 1px rgba(87, 137, 255, 0.08);
 }
+
 .nav-item.active::after {
     content: '';
     position: absolute;
-    bottom: -6px;
-    left: 8px;
-    right: 8px;
-    height: 2px;
+    top: 10px;
+    bottom: 10px;
+    left: 0;
+    width: 4px;
     border-radius: 8px;
     background: linear-gradient(90deg, #3f79de 0%, #4a89ec 100%);
 }
 
+.admin-sidebar-footer {
+    padding-top: 18px;
+    border-top: 1px solid #232833;
+}
+
+.logout-btn {
+    color: #ffb6b6;
+}
+
 .logout-btn:hover {
-    color: #ffd4d4;
+    color: #fff1f1;
+    background: rgba(190, 62, 62, 0.14);
+    border-color: rgba(190, 62, 62, 0.3);
 }
 
 /* 3. Fluid Main Content */
 .admin-viewport {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     display: flex;
     justify-content: center;
-    padding: 40px 0;
+    padding: 32px;
+    box-sizing: border-box;
 }
 
 .admin-fluid-card {
     background-color: #1a1a1a;
     border: 1px solid #2a2a2a;
     border-radius: 12px;
-    width: 90%;
+    width: 100%;
     max-width: 1400px; /* Full screen utility */
     padding: 40px;
 }
@@ -149,18 +217,24 @@ html, body, #root {
 }
 
 .layout-controls-panel {
-    background-color: #1d1d1f;
-    border: 1px solid #333;
+    background: linear-gradient(180deg, #1d1d1f 0%, #181a1f 100%);
+    border: 1px solid #333b47;
     border-radius: 10px;
     padding: 22px;
+    color: #f5f7fb;
+    color-scheme: dark;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
 }
 
 .panel-title {
     margin: 0 0 18px;
     padding-bottom: 12px;
-    border-bottom: 1px solid #323232;
+    border-bottom: 1px solid #323a47;
     font-size: 2rem;
-    color: #fff;
+    color: #f8fbff !important;
+    -webkit-text-fill-color: #f8fbff;
+    letter-spacing: 0.01em;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
 }
 
 .control-grid {
@@ -174,6 +248,28 @@ html, body, #root {
     font-style: italic;
     line-height: 1.4;
     margin: 4px 0 12px;
+}
+
+.layout-controls-panel .input-group label {
+    color: #d0d8e8;
+}
+
+.layout-controls-panel .input-group input,
+.layout-controls-panel .input-group textarea,
+.layout-controls-panel .input-group select {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid #333b47;
+    color: #ffffff;
+}
+
+.layout-controls-panel .input-group input::placeholder,
+.layout-controls-panel .input-group textarea::placeholder {
+    color: #aab4c5;
+}
+
+.layout-controls-panel select option {
+    color: #111111;
+    background: #ffffff;
 }
 
 .layout-visual-panel {
@@ -194,52 +290,63 @@ html, body, #root {
     display: flex;
     flex-direction: column;
     min-height: 540px;
+    align-items: center;
+    justify-content: flex-start;
 }
 
 .map-row {
     display: grid;
-    grid-template-columns: 48px repeat(5, 48px) 48px;
-    justify-content: space-between;
+    width: fit-content;
     align-items: center;
-    column-gap: 10px;
+    column-gap: var(--stall-gap, 16px);
+    margin: 0 auto;
 }
 
 .map-body {
-    flex: 1;
     display: grid;
-    grid-template-columns: 48px 1fr 48px;
+    grid-template-columns: var(--stall-size, 60px) minmax(220px, auto) var(--stall-size, 60px);
     align-items: start;
-    margin-top: 12px;
+    column-gap: calc(var(--stall-gap, 16px) * 3);
+    margin-top: var(--stall-gap, 16px);
+    width: fit-content;
 }
 
 .side-column {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: var(--stall-gap, 16px);
 }
 
 .center-column-pair {
-    width: min(360px, 100%);
+    width: fit-content;
     margin: 0 auto;
     display: grid;
-    grid-template-columns: 48px 48px;
-    justify-content: space-between;
-    row-gap: 12px;
+    grid-template-columns: repeat(2, var(--stall-size, 60px));
+    column-gap: clamp(72px, 10vw, 220px);
+    row-gap: var(--stall-gap, 16px);
 }
 
 .stall-box {
-    width: 48px;
-    height: 48px;
-    border-radius: 4px;
+    width: var(--stall-size, 60px);
+    height: var(--stall-size, 60px);
+    border-radius: 8px;
     border: 1px solid #4a4a4a;
     background-color: #222327;
     color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
     font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1;
+    flex-shrink: 0;
+    overflow: hidden;
+    text-align: center;
 }
 
+.left-stall,
+.right-stall,
 .top-stall {
     border-color: #3d8fff;
     background-color: rgba(61, 143, 255, 0.12);
@@ -268,8 +375,15 @@ html, body, #root {
     }
 
     .map-row {
-        justify-content: center;
-        gap: 10px;
+        column-gap: 12px;
+    }
+
+    .map-body {
+        column-gap: 24px;
+    }
+
+    .center-column-pair {
+        column-gap: 72px;
     }
 }
 
@@ -499,7 +613,7 @@ html, body, #root {
     background: linear-gradient(180deg, #16171a 0%, #121316 100%);
     border: 1px solid #292b30;
     border-radius: 18px;
-    width: 90%;
+    width: 100%;
     max-width: 1220px;
     padding: 42px 48px;
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.38);
@@ -661,22 +775,43 @@ html, body, #root {
 }
 
 @media (max-width: 900px) {
-    .navbar {
-        height: auto;
-        padding: 12px 14px;
-        align-items: flex-start;
+    .admin-root {
         flex-direction: column;
-        gap: 10px;
+    }
+
+    .admin-sidebar {
+        width: 100%;
+        min-height: auto;
+        position: static;
+        padding: 18px 14px;
+        box-shadow: none;
+    }
+
+    .admin-sidebar-top,
+    .admin-sidebar-footer {
+        width: 100%;
+    }
+
+    .nav-brand {
+        padding-left: 4px;
+        padding-right: 4px;
     }
 
     .nav-links {
-        width: 100%;
-        flex-wrap: wrap;
-        gap: 8px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 10px;
+    }
+
+    .admin-viewport {
+        padding: 18px 14px 28px;
+    }
+
+    .admin-fluid-card {
+        padding: 24px 18px;
     }
 
     .report-card {
-        width: 95%;
         padding: 24px 16px;
     }
 

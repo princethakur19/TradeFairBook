@@ -15,7 +15,7 @@ const StallsDisplay = () => {
   const [domeData, setDomeData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filterSide, setFilterSide] = useState("ALL");
-  const [selectedStall, setSelectedStall] = useState(null);
+  const [selectedStalls, setSelectedStalls] = useState([]);
   const [showBookingModal, setShowBookingModal] = useState(false);
 
   const fetchStalls = useCallback(async () => {
@@ -51,6 +51,21 @@ const StallsDisplay = () => {
     return { available, booked };
   }, [stalls]);
 
+  const selectedStallIds = useMemo(
+    () => new Set(selectedStalls.map((stall) => stall._id)),
+    [selectedStalls]
+  );
+
+  const totalSelectedAmount = useMemo(
+    () => selectedStalls.reduce((sum, stall) => sum + Number(stall.price || 0), 0),
+    [selectedStalls]
+  );
+
+  const selectedStallNumbers = useMemo(
+    () => selectedStalls.map((stall) => stall.stallNumber).join(", "),
+    [selectedStalls]
+  );
+
   const getStatusColor = (status) => {
     if (status === "AVAILABLE") return "#16a34a";
     if (status === "BOOKED") return "#dc2626";
@@ -65,12 +80,25 @@ const StallsDisplay = () => {
       return;
     }
 
-    setSelectedStall(stall);
-    setShowBookingModal(true);
+    setSelectedStalls((prev) => {
+      const exists = prev.some((selected) => selected._id === stall._id);
+      if (exists) {
+        return prev.filter((selected) => selected._id !== stall._id);
+      }
+      return [...prev, stall];
+    });
   }, []);
 
+  const openBookingModal = useCallback(() => {
+    if (!selectedStalls.length) {
+      alert("Please select at least one stall.");
+      return;
+    }
+    setShowBookingModal(true);
+  }, [selectedStalls.length]);
+
   const handleConfirmBooking = useCallback(async () => {
-    if (!selectedStall) return;
+    if (!selectedStalls.length) return;
 
     const userId = getLoggedInUserId();
     if (!userId) {
@@ -80,16 +108,23 @@ const StallsDisplay = () => {
     }
 
     setShowBookingModal(false);
-    navigate(`/aadhar-upload/${selectedStall._id}`, {
+    navigate("/aadhar-upload", {
       state: {
         bookingContext: {
           domeId,
-          amount: selectedStall.price,
-          stallNumber: selectedStall.stallNumber
+          amount: totalSelectedAmount,
+          stallNumber: selectedStallNumbers,
+          stallIds: selectedStalls.map((stall) => stall._id),
+          stalls: selectedStalls.map((stall) => ({
+            _id: stall._id,
+            stallNumber: stall.stallNumber,
+            side: stall.side,
+            price: stall.price
+          }))
         }
       }
     });
-  }, [domeId, navigate, selectedStall]);
+  }, [domeId, navigate, selectedStallNumbers, selectedStalls, totalSelectedAmount]);
 
   if (loading) {
     return (
@@ -155,10 +190,35 @@ const StallsDisplay = () => {
           </div>
         </section>
 
+        <section className="selection-panel">
+          <p>
+            <strong>Selected:</strong>{" "}
+            {selectedStalls.length ? `${selectedStalls.length} stall(s)` : "None"}
+          </p>
+          <p>
+            <strong>Total:</strong> INR {totalSelectedAmount.toLocaleString()}
+          </p>
+          <div className="selection-actions">
+            <button className="book-selected-btn" onClick={openBookingModal}>
+              Book Selected
+            </button>
+            <button
+              className="clear-selection-btn"
+              onClick={() => setSelectedStalls([])}
+              disabled={!selectedStalls.length}
+            >
+              Clear
+            </button>
+          </div>
+        </section>
+
         <section className="stalls-grid">
           {filteredStalls.length > 0 ? (
             filteredStalls.map((stall) => (
-              <div key={stall._id} className={`stall-card ${stall.status.toLowerCase()}`}>
+              <div
+                key={stall._id}
+                className={`stall-card ${stall.status.toLowerCase()} ${selectedStallIds.has(stall._id) ? "selected" : ""}`}
+              >
                 <div className="stall-header">
                   <h3 className="stall-number">{stall.stallNumber}</h3>
                   <span className="stall-status" style={{ backgroundColor: getStatusColor(stall.status) }}>
@@ -173,7 +233,7 @@ const StallsDisplay = () => {
 
                 {stall.status === "AVAILABLE" ? (
                   <button className="book-btn" onClick={() => handleBookStall(stall)}>
-                    Book Now
+                    {selectedStallIds.has(stall._id) ? "Remove" : "Add to Selection"}
                   </button>
                 ) : (
                   <button className="book-btn disabled" disabled>
@@ -190,7 +250,7 @@ const StallsDisplay = () => {
         </section>
       </main>
 
-      {showBookingModal && selectedStall && (
+      {showBookingModal && selectedStalls.length > 0 && (
         <div className="modal-overlay" onClick={() => setShowBookingModal(false)}>
           <div className="modal-content" onClick={(event) => event.stopPropagation()}>
             <div className="modal-header">
@@ -202,9 +262,9 @@ const StallsDisplay = () => {
 
             <div className="modal-body">
               <div className="booking-details">
-                <p><strong>Stall Number:</strong> {selectedStall.stallNumber}</p>
-                <p><strong>Side:</strong> {selectedStall.side}</p>
-                <p><strong>Price:</strong> INR {selectedStall.price.toLocaleString()}</p>
+                <p><strong>Stalls:</strong> {selectedStallNumbers}</p>
+                <p><strong>Count:</strong> {selectedStalls.length}</p>
+                <p><strong>Total Price:</strong> INR {totalSelectedAmount.toLocaleString()}</p>
                 <p><strong>Dome:</strong> {domeData?.domeName || domeData?.name}</p>
               </div>
 

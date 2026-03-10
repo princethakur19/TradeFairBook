@@ -197,6 +197,63 @@
   font-weight: 600;
 }
 
+.selection-panel {
+  max-width: 1200px;
+  margin: 0 auto 24px;
+  background: var(--sdp-surface);
+  border: 1px solid var(--sdp-border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 20px;
+  align-items: center;
+}
+
+.selection-panel p {
+  margin: 0;
+  color: var(--sdp-text);
+  font-size: 14px;
+}
+
+.selection-actions {
+  justify-self: end;
+  display: flex;
+  gap: 10px;
+}
+
+.book-selected-btn,
+.clear-selection-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.book-selected-btn {
+  background: var(--sdp-primary);
+  color: #ffffff;
+}
+
+.book-selected-btn:hover {
+  background: var(--sdp-primary-hover);
+}
+
+.clear-selection-btn {
+  background: #64748b;
+  color: #ffffff;
+}
+
+.clear-selection-btn:hover {
+  background: #475569;
+}
+
+.clear-selection-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .filter-buttons {
   display: flex;
   gap: 10px;
@@ -262,6 +319,11 @@
   border-color: #dc2626;
   background: rgba(220, 38, 38, 0.08);
   opacity: 0.7;
+}
+
+.stall-card.selected {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3);
 }
 
 .stall-header {
@@ -501,6 +563,15 @@
 
   .filter-buttons {
     flex-direction: column;
+  }
+
+  .selection-panel {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .selection-actions {
+    justify-self: start;
   }
 
   .header-top {

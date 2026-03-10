@@ -203,26 +203,32 @@ const StallLayout = ({ setStallsData }) => {
       <div className="layout-visual-panel">
         <div className="preview-header">Stall Layout Preview</div>
 
-        <div className="visual-map-container">
+        <div
+          className="visual-map-container"
+          style={{
+            "--stall-size": "60px",
+            "--stall-gap": "16px",
+          }}
+        >
           <div
             className="map-row"
             style={{
-              gridTemplateColumns: `48px repeat(${Math.max(config.top, 1)}, 48px) 48px`,
+              gridTemplateColumns: `var(--stall-size) repeat(${Math.max(config.top, 1)}, var(--stall-size)) var(--stall-size)`,
             }}
           >
-            <div className="stall-box">{preview.left[0]}</div>
+            <div className="stall-box left-stall">{preview.left[0]}</div>
             {preview.top.map((stallNumber) => (
               <div key={stallNumber} className="stall-box top-stall">
                 {stallNumber}
               </div>
             ))}
-            <div className="stall-box">{preview.right[0]}</div>
+            <div className="stall-box right-stall">{preview.right[0]}</div>
           </div>
 
           <div className="map-body">
             <div className="side-column">
               {preview.left.slice(1).map((stallNumber) => (
-                <div key={stallNumber} className="stall-box">
+                <div key={stallNumber} className="stall-box left-stall">
                   {stallNumber}
                 </div>
               ))}
@@ -239,7 +245,7 @@ const StallLayout = ({ setStallsData }) => {
 
             <div className="side-column">
               {preview.right.slice(1).map((stallNumber) => (
-                <div key={stallNumber} className="stall-box">
+                <div key={stallNumber} className="stall-box right-stall">
                   {stallNumber}
                 </div>
               ))}

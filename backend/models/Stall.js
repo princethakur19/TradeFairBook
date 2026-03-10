@@ -34,7 +34,7 @@ const stallSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 
-// ✅ Prevent duplicate stall numbers inside same dome
+// ✅ Prevent duplicate stall numbers inside samme dome
 stallSchema.index({ stallNumber: 1, dome: 1 }, { unique: true });
 
 module.exports = mongoose.model("Stall", stallSchema);

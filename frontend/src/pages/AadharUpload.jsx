@@ -43,7 +43,16 @@ const AadharUpload = () => {
         setBookingContext({
           domeId: stall.dome?._id || stall.dome,
           amount: stall.price,
-          stallNumber: stall.stallNumber
+          stallNumber: stall.stallNumber,
+          stallIds: [stallId],
+          stalls: [
+            {
+              _id: stallId,
+              stallNumber: stall.stallNumber,
+              side: stall.side,
+              price: stall.price
+            }
+          ]
         });
       } catch (ctxError) {
         console.error("Failed to load stall context:", ctxError);
@@ -100,6 +109,17 @@ const AadharUpload = () => {
       return;
     }
 
+    const selectedStallIds = Array.isArray(bookingContext?.stallIds) && bookingContext.stallIds.length
+      ? bookingContext.stallIds
+      : stallId
+        ? [stallId]
+        : [];
+
+    if (!selectedStallIds.length) {
+      setError("Missing selected stalls. Please return and choose stalls again.");
+      return;
+    }
+
     if (!aadharName.trim()) {
       setError("Please enter name exactly as on Aadhaar.");
       return;
@@ -142,12 +162,16 @@ const AadharUpload = () => {
       }
 
       await api.post("/bookings/create", {
-        stall: stallId,
+        stallIds: selectedStallIds,
         aadhaarVerificationId,
         status: "PENDING"
       });
 
-      alert("Verification successful. Stall booked successfully.");
+      alert(
+        `Verification successful. ${selectedStallIds.length} stall${
+          selectedStallIds.length > 1 ? "s" : ""
+        } booked successfully.`
+      );
       navigate(`/stalls/${bookingContext.domeId}`);
     } catch (submitError) {
       console.error("Booking with Aadhaar verification failed:", submitError);
@@ -172,6 +196,9 @@ const AadharUpload = () => {
           {bookingContext && (
             <div className="booking-context">
               <p><strong>Stall:</strong> {bookingContext.stallNumber || stallId}</p>
+              <p>
+                <strong>Count:</strong> {bookingContext.stallIds?.length || (stallId ? 1 : 0)}
+              </p>
               <p><strong>Amount:</strong> INR {Number(bookingContext.amount || 0).toLocaleString()}</p>
             </div>
           )}

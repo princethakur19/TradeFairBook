@@ -30,6 +30,7 @@ function App() {
       <Route path="/domes" element={<DomeSelection />} />
       <Route path="/stalls/:domeId" element={userStallsElement(<StallsDisplay />)} />
       <Route path="/select-stall/:domeId" element={userStallsElement(<UserStallLayout />)} />
+      <Route path="/aadhar-upload" element={userStallsElement(<AadharUpload />)} />
       <Route path="/aadhar-upload/:stallId" element={userStallsElement(<AadharUpload />)} />
 
       {/* ADMIN ROUTES */}

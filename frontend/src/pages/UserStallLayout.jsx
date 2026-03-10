@@ -22,6 +22,7 @@ const UserStallLayout = () => {
   const [stalls, setStalls] = useState([]);
   const [domeData, setDomeData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedStalls, setSelectedStalls] = useState([]);
   const [selectedStall, setSelectedStall] = useState(null);
   const [showBookingModal, setShowBookingModal] = useState(false);
 
@@ -85,19 +86,47 @@ const UserStallLayout = () => {
     };
   }, [grouped.CENTER_LEFT.length, grouped.CENTER_RIGHT.length, stalls]);
 
+  const selectedStallIds = useMemo(
+    () => new Set(selectedStalls.map((stall) => stall._id)),
+    [selectedStalls]
+  );
+
+  const totalSelectedAmount = useMemo(
+    () => selectedStalls.reduce((sum, stall) => sum + Number(stall.price || 0), 0),
+    [selectedStalls]
+  );
+
+  const selectedStallNumbers = useMemo(
+    () => selectedStalls.map((stall) => stall.stallNumber).join(", "),
+    [selectedStalls]
+  );
+
   const handleStallClick = useCallback((stall) => {
     if (stall.status === "BOOKED" || stall.status === "BLOCKED") {
       setSelectedStall(stall);
-      setShowBookingModal(false);
       return;
     }
 
-    setSelectedStall(stall);
-    setShowBookingModal(true);
+    setSelectedStalls((prev) => {
+      const exists = prev.some((selected) => selected._id === stall._id);
+      if (exists) {
+        return prev.filter((selected) => selected._id !== stall._id);
+      }
+      return [...prev, stall];
+    });
   }, []);
 
+  const openBookingModal = useCallback(() => {
+    if (!selectedStalls.length) {
+      alert("Please select at least one stall.");
+      return;
+    }
+
+    setShowBookingModal(true);
+  }, [selectedStalls.length]);
+
   const handleConfirmBooking = useCallback(async () => {
-    if (!selectedStall) return;
+    if (!selectedStalls.length) return;
 
     const userId = getLoggedInUserId();
     if (!userId) {
@@ -107,16 +136,23 @@ const UserStallLayout = () => {
     }
 
     setShowBookingModal(false);
-    navigate(`/aadhar-upload/${selectedStall._id}`, {
+    navigate("/aadhar-upload", {
       state: {
         bookingContext: {
           domeId,
-          amount: selectedStall.price,
-          stallNumber: selectedStall.stallNumber
+          amount: totalSelectedAmount,
+          stallNumber: selectedStallNumbers,
+          stallIds: selectedStalls.map((stall) => stall._id),
+          stalls: selectedStalls.map((stall) => ({
+            _id: stall._id,
+            stallNumber: stall.stallNumber,
+            side: stall.side,
+            price: stall.price
+          }))
         }
       }
     });
-  }, [domeId, navigate, selectedStall]);
+  }, [domeId, navigate, selectedStallNumbers, selectedStalls, totalSelectedAmount]);
 
   if (loading) {
     return (
@@ -194,9 +230,24 @@ const UserStallLayout = () => {
               </div>
             </div>
 
-            <button className="select-btn" type="button">
-              Click on stalls to book
+            {selectedStalls.length > 0 && (
+              <div className="selected-summary">
+                <p><strong>Selected:</strong> {selectedStallNumbers}</p>
+                <p><strong>Total:</strong> INR {totalSelectedAmount.toLocaleString()}</p>
+              </div>
+            )}
+
+            <button className="select-btn" type="button" onClick={openBookingModal}>
+              {selectedStalls.length
+                ? `Book ${selectedStalls.length} Stall${selectedStalls.length > 1 ? "s" : ""}`
+                : "Click on stalls to select"}
             </button>
+
+            {selectedStalls.length > 0 && (
+              <button className="select-btn clear-btn" type="button" onClick={() => setSelectedStalls([])}>
+                Clear Selection
+              </button>
+            )}
           </div>
 
           <div className="right-panel">
@@ -208,7 +259,7 @@ const UserStallLayout = () => {
                   <button
                     key={stall._id}
                     type="button"
-                    className={`stall-box ${stall.status.toLowerCase()}`}
+                    className={`stall-box ${stall.status.toLowerCase()} ${selectedStallIds.has(stall._id) ? "selected" : ""}`}
                     onClick={() => handleStallClick(stall)}
                     title={`${stall.stallNumber} - INR ${stall.price} - ${stall.status}`}
                   >
@@ -223,7 +274,7 @@ const UserStallLayout = () => {
                     <button
                       key={stall._id}
                       type="button"
-                      className={`stall-box ${stall.status.toLowerCase()}`}
+                      className={`stall-box ${stall.status.toLowerCase()} ${selectedStallIds.has(stall._id) ? "selected" : ""}`}
                       onClick={() => handleStallClick(stall)}
                       title={`${stall.stallNumber} - INR ${stall.price} - ${stall.status}`}
                     >
@@ -242,7 +293,7 @@ const UserStallLayout = () => {
                         <button
                           key={stall._id}
                           type="button"
-                          className={`stall-box center-stall ${stall.status.toLowerCase()}`}
+                          className={`stall-box center-stall ${stall.status.toLowerCase()} ${selectedStallIds.has(stall._id) ? "selected" : ""}`}
                           onClick={() => handleStallClick(stall)}
                           title={`${stall.stallNumber} - INR ${stall.price} - ${stall.status}`}
                         >
@@ -255,7 +306,7 @@ const UserStallLayout = () => {
                         <button
                           key={stall._id}
                           type="button"
-                          className={`stall-box center-stall ${stall.status.toLowerCase()}`}
+                          className={`stall-box center-stall ${stall.status.toLowerCase()} ${selectedStallIds.has(stall._id) ? "selected" : ""}`}
                           onClick={() => handleStallClick(stall)}
                           title={`${stall.stallNumber} - INR ${stall.price} - ${stall.status}`}
                         >
@@ -272,7 +323,7 @@ const UserStallLayout = () => {
                   <button
                     key={stall._id}
                     type="button"
-                    className={`stall-box ${stall.status.toLowerCase()}`}
+                    className={`stall-box ${stall.status.toLowerCase()} ${selectedStallIds.has(stall._id) ? "selected" : ""}`}
                     onClick={() => handleStallClick(stall)}
                     title={`${stall.stallNumber} - INR ${stall.price} - ${stall.status}`}
                   >
@@ -309,7 +360,7 @@ const UserStallLayout = () => {
         </div>
       </main>
 
-      {showBookingModal && selectedStall && (
+      {showBookingModal && selectedStalls.length > 0 && (
         <div className="modal-overlay" onClick={() => setShowBookingModal(false)}>
           <div className="modal-content" onClick={(event) => event.stopPropagation()}>
             <div className="modal-header">
@@ -321,9 +372,9 @@ const UserStallLayout = () => {
 
             <div className="modal-body">
               <div className="booking-details">
-                <p><strong>Stall Number:</strong> {selectedStall.stallNumber}</p>
-                <p><strong>Side:</strong> {selectedStall.side}</p>
-                <p><strong>Price:</strong> INR {selectedStall.price.toLocaleString()}</p>
+                <p><strong>Stalls:</strong> {selectedStallNumbers}</p>
+                <p><strong>Count:</strong> {selectedStalls.length}</p>
+                <p><strong>Total Price:</strong> INR {totalSelectedAmount.toLocaleString()}</p>
                 <p><strong>Dome:</strong> {domeData?.domeName || domeData?.name}</p>
               </div>
 
@@ -344,7 +395,7 @@ const UserStallLayout = () => {
         </div>
       )}
 
-      {selectedStall && !showBookingModal && (selectedStall.status === "BOOKED" || selectedStall.status === "BLOCKED") && (
+      {selectedStall && (selectedStall.status === "BOOKED" || selectedStall.status === "BLOCKED") && (
         <div className="modal-overlay" onClick={() => setSelectedStall(null)}>
           <div className="modal-content" onClick={(event) => event.stopPropagation()}>
             <div className="modal-header">

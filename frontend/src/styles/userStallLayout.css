@@ -264,6 +264,29 @@
   letter-spacing: 1px;
 }
 
+.select-btn.clear-btn {
+  margin-top: 10px;
+  background: #64748b;
+}
+
+.select-btn.clear-btn:hover {
+  background: #475569;
+}
+
+.selected-summary {
+  background: var(--usl-field-bg);
+  border: 1px solid var(--usl-field-border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+
+.selected-summary p {
+  margin: 4px 0;
+  color: var(--usl-field-text);
+  font-size: 14px;
+}
+
 .select-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 24px rgba(59, 130, 246, 0.4);
@@ -364,6 +387,12 @@
   background: rgba(34, 197, 94, 0.25);
   transform: scale(1.1);
   box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+}
+
+.stall-box.selected {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.35);
+  transform: scale(1.06);
 }
 
 .stall-box.booked {

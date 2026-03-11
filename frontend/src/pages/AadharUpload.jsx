@@ -4,7 +4,9 @@ import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import api from "../api/axios";
 import { getLoggedInUserId } from "../utils/auth";
+import { DEFAULT_INCLUDED_MATERIALS, getGrandTotal } from "../utils/bookingMaterials";
 import "../styles/aadharUpload.css";
+import "../styles/bookingMaterials.css";
 
 const AadharUpload = () => {
   const { stallId } = useParams();
@@ -20,6 +22,13 @@ const AadharUpload = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingContext, setLoadingContext] = useState(false);
+  const stallAmount = Number(bookingContext?.stallAmount ?? bookingContext?.amount ?? 0);
+  const defaultMaterials = Array.isArray(bookingContext?.defaultMaterials) && bookingContext.defaultMaterials.length
+    ? bookingContext.defaultMaterials
+    : DEFAULT_INCLUDED_MATERIALS;
+  const extraMaterials = Array.isArray(bookingContext?.extraMaterials) ? bookingContext.extraMaterials : [];
+  const extraMaterialTotal = Number(bookingContext?.extraMaterialTotal || 0);
+  const grandTotal = getGrandTotal(stallAmount, extraMaterialTotal);
 
   const maskedAadhar = useMemo(() => {
     const digits = aadharNumber.replace(/\D/g, "").slice(0, 12);
@@ -43,6 +52,11 @@ const AadharUpload = () => {
         setBookingContext({
           domeId: stall.dome?._id || stall.dome,
           amount: stall.price,
+          stallAmount: stall.price,
+          extraMaterialTotal: 0,
+          grandTotal: stall.price,
+          defaultMaterials: DEFAULT_INCLUDED_MATERIALS,
+          extraMaterials: [],
           stallNumber: stall.stallNumber,
           stallIds: [stallId],
           stalls: [
@@ -164,7 +178,10 @@ const AadharUpload = () => {
       await api.post("/bookings/create", {
         stallIds: selectedStallIds,
         aadhaarVerificationId,
-        status: "PENDING"
+        status: "PENDING",
+        defaultMaterials,
+        extraMaterials,
+        extraMaterialTotal
       });
 
       alert(
@@ -199,7 +216,62 @@ const AadharUpload = () => {
               <p>
                 <strong>Count:</strong> {bookingContext.stallIds?.length || (stallId ? 1 : 0)}
               </p>
-              <p><strong>Amount:</strong> INR {Number(bookingContext.amount || 0).toLocaleString()}</p>
+              <p><strong>Stall Price:</strong> INR {stallAmount.toLocaleString()}</p>
+              <p><strong>Extra Materials Total:</strong> INR {extraMaterialTotal.toLocaleString()}</p>
+              <p><strong>Grand Total:</strong> INR {grandTotal.toLocaleString()}</p>
+            </div>
+          )}
+
+          {bookingContext && (
+            <div className="booking-summary-stack">
+              <section className="booking-materials-card">
+                <div className="booking-materials-header">
+                  <h3>Included Materials</h3>
+                  <span>Free with stall</span>
+                </div>
+                <div className="booking-materials-list">
+                  {defaultMaterials.map((material) => (
+                    <div className="booking-materials-row included" key={material.name}>
+                      <div>
+                        <strong>{material.name}</strong>
+                        <p>Included in stall price</p>
+                      </div>
+                      <span className="booking-materials-qty">x {material.quantity}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="booking-materials-card">
+                <div className="booking-materials-header">
+                  <h3>Extra Materials</h3>
+                  <span>Optional purchase</span>
+                </div>
+                {extraMaterials.length ? (
+                  <div className="booking-materials-list">
+                    {extraMaterials.map((material) => (
+                      <div className="booking-materials-row" key={`${material.materialId || material.name}`}>
+                        <div>
+                          <strong>{material.name}</strong>
+                          <p>
+                            {Number(material.quantity || 0)} x INR {Number(material.price || 0).toLocaleString()}
+                          </p>
+                        </div>
+                        <span className="booking-materials-qty">
+                          INR {Number(material.subtotal || 0).toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="booking-materials-empty">No extra materials selected.</p>
+                )}
+
+                <div className="booking-extra-total">
+                  <span>Extra Materials Total</span>
+                  <strong>INR {extraMaterialTotal.toLocaleString()}</strong>
+                </div>
+              </section>
             </div>
           )}
 

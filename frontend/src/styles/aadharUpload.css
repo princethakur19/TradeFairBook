@@ -68,6 +68,13 @@
   gap: 14px;
 }
 
+.booking-summary-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
 .booking-context {
   margin-bottom: 16px;
   padding: 12px 14px;

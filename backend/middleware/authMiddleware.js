@@ -20,6 +20,27 @@ exports.protect = (req, res, next) => {
   }
 };
 
+exports.optionalProtect = (req, _res, next) => {
+  let token = req.headers.authorization;
+
+  if (!token || !token.startsWith("Bearer")) {
+    return next();
+  }
+
+  try {
+    token = token.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = {
+      ...decoded,
+      role: String(decoded.role || "").toUpperCase()
+    };
+  } catch (_error) {
+    req.user = undefined;
+  }
+
+  next();
+};
+
 exports.adminOnly = (req, res, next) => {
   return exports.authorizeRoles("ADMIN", "SUPER_ADMIN")(req, res, next);
 };

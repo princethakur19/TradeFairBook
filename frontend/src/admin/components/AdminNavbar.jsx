@@ -8,6 +8,7 @@ const AdminNavbar = ({ activeSection, onSectionChange, onLogout }) => {
     { key: 'manage-domes', label: 'Manage Domes' },
     { key: 'stall-layout', label: 'Stall Layout' },
     { key: 'manage-stalls', label: 'Manage Stalls' },
+    { key: 'manage-materials', label: 'Manage Materials' },
     { key: 'manage-bookings', label: 'Manage Bookings' }
   ];
 

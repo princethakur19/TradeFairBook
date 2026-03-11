@@ -1,10 +1,17 @@
 const Booking = require("../models/Booking");
 const Stall = require("../models/Stall");
 const AadhaarVerification = require("../models/AadhaarVerification");
+const Material = require("../models/Material");
 
 const BOOKING_STATUSES = ["PENDING", "APPROVED", "REJECTED", "CANCELLED"];
 const ACTIVE_BOOKING_STATUSES = ["PENDING", "APPROVED", "PAID"];
 const TERMINAL_BOOKING_STATUSES = ["REJECTED", "CANCELLED"];
+const DEFAULT_INCLUDED_MATERIALS = Object.freeze([
+  { name: "Table", quantity: 1, price: 0, subtotal: 0 },
+  { name: "Chair", quantity: 2, price: 0, subtotal: 0 },
+  { name: "Fan", quantity: 1, price: 0, subtotal: 0 },
+  { name: "Light", quantity: 1, price: 0, subtotal: 0 }
+]);
 
 const bookingPopulate = [
   { path: "user", select: "fullname email" },
@@ -15,6 +22,22 @@ const bookingPopulate = [
 
 const normalizeStatus = (value) => String(value || "").toUpperCase();
 const toObjectIdString = (value) => String(value || "").trim();
+const toPositiveInteger = (value) => {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+};
+const distributeAmountAcrossBookings = (total, count) => {
+  if (!count) return [];
+  const normalizedTotal = Math.max(0, Math.round(Number(total) || 0));
+  const baseShare = Math.floor(normalizedTotal / count);
+  let remainder = normalizedTotal % count;
+
+  return Array.from({ length: count }, () => {
+    const share = baseShare + (remainder > 0 ? 1 : 0);
+    if (remainder > 0) remainder -= 1;
+    return share;
+  });
+};
 
 const syncStallStatusForBooking = async (bookingId) => {
   const booking = await Booking.findById(bookingId).select("stall");
@@ -36,7 +59,14 @@ const syncStallStatusForBooking = async (bookingId) => {
 exports.createBooking = async (req, res) => {
   try {
     const userId = req.user?.id;
-    const { stall, stallIds, status, aadhaarVerificationId } = req.body || {};
+    const {
+      stall,
+      stallIds,
+      status,
+      aadhaarVerificationId,
+      defaultMaterials,
+      extraMaterials
+    } = req.body || {};
     const normalizedStatus = normalizeStatus(status || "PENDING");
     const requestedStallIds = Array.isArray(stallIds) ? stallIds : stall ? [stall] : [];
     const normalizedStallIds = [...new Set(requestedStallIds.map(toObjectIdString).filter(Boolean))];
@@ -83,6 +113,61 @@ exports.createBooking = async (req, res) => {
       });
     }
 
+    const normalizedDefaultMaterials = Array.isArray(defaultMaterials) && defaultMaterials.length
+      ? defaultMaterials
+        .map((item) => ({
+          name: String(item?.name || "").trim(),
+          quantity: toPositiveInteger(item?.quantity),
+          price: 0,
+          subtotal: 0
+        }))
+        .filter((item) => item.name && item.quantity > 0)
+      : DEFAULT_INCLUDED_MATERIALS;
+
+    const requestedExtraMaterials = Array.isArray(extraMaterials)
+      ? extraMaterials
+        .map((item) => ({
+          materialId: toObjectIdString(item?.materialId),
+          quantity: toPositiveInteger(item?.quantity)
+        }))
+        .filter((item) => item.materialId && item.quantity > 0)
+      : [];
+
+    let normalizedExtraMaterials = [];
+    let extraMaterialTotal = 0;
+
+    if (requestedExtraMaterials.length) {
+      const requestedMaterialIds = [...new Set(requestedExtraMaterials.map((item) => item.materialId))];
+      const materialDocs = await Material.find({
+        _id: { $in: requestedMaterialIds },
+        dome: uniqueDomeIds[0],
+        isActive: true
+      }).select("name price");
+
+      if (materialDocs.length !== requestedMaterialIds.length) {
+        return res.status(400).json({
+          success: false,
+          message: "One or more extra materials are invalid or unavailable for this dome"
+        });
+      }
+
+      const materialMap = new Map(materialDocs.map((doc) => [String(doc._id), doc]));
+      normalizedExtraMaterials = requestedExtraMaterials.map((item) => {
+        const materialDoc = materialMap.get(item.materialId);
+        const price = Number(materialDoc.price || 0);
+        const subtotal = price * item.quantity;
+        extraMaterialTotal += subtotal;
+
+        return {
+          materialId: materialDoc._id,
+          name: materialDoc.name,
+          price,
+          quantity: item.quantity,
+          subtotal
+        };
+      });
+    }
+
     const existingBookings = await Booking.find({
       stall: { $in: normalizedStallIds },
       status: { $in: ACTIVE_BOOKING_STATUSES }
@@ -102,13 +187,25 @@ exports.createBooking = async (req, res) => {
     }
 
     const stallDocMap = new Map(stallDocs.map((stallDoc) => [String(stallDoc._id), stallDoc]));
+    const distributedExtraShares = distributeAmountAcrossBookings(
+      extraMaterialTotal,
+      normalizedStallIds.length
+    );
     const bookingsPayload = normalizedStallIds.map((stallId) => {
       const stallDoc = stallDocMap.get(stallId);
+      const stallPrice = Number(stallDoc.price || 0);
+      const extraMaterialShare = distributedExtraShares.shift() || 0;
       return {
         user: userId,
         stall: stallId,
         dome: stallDoc.dome,
-        amount: stallDoc.price,
+        stallPrice,
+        amount: stallPrice + extraMaterialShare,
+        defaultMaterials: normalizedDefaultMaterials,
+        extraMaterials: normalizedExtraMaterials,
+        extraMaterialTotal,
+        extraMaterialShare,
+        grandTotal: stallPrice + extraMaterialShare,
         aadhaarVerification: aadhaarVerification._id,
         status: normalizedStatus
       };

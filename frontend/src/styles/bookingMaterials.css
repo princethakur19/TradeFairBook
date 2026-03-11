@@ -1,0 +1,201 @@
+:root {
+  --bm-card-bg: #f8fbff;
+  --bm-card-border: rgba(148, 163, 184, 0.34);
+  --bm-row-bg: #ffffff;
+  --bm-heading: #0f172a;
+  --bm-text: #1e293b;
+  --bm-muted: #64748b;
+  --bm-qty-bg: #eff6ff;
+  --bm-qty-border: rgba(59, 130, 246, 0.3);
+  --bm-qty-text: #1d4ed8;
+  --bm-input-bg: #ffffff;
+  --bm-input-border: rgba(148, 163, 184, 0.42);
+  --bm-total-border: rgba(148, 163, 184, 0.28);
+}
+
+[data-theme="dark"] {
+  --bm-card-bg: rgba(255, 255, 255, 0.06);
+  --bm-card-border: rgba(148, 163, 184, 0.24);
+  --bm-row-bg: rgba(255, 255, 255, 0.04);
+  --bm-heading: #f8fafc;
+  --bm-text: #e2e8f0;
+  --bm-muted: #cbd5e1;
+  --bm-qty-bg: rgba(37, 99, 235, 0.12);
+  --bm-qty-border: rgba(59, 130, 246, 0.4);
+  --bm-qty-text: #dbeafe;
+  --bm-input-bg: rgba(255, 255, 255, 0.04);
+  --bm-input-border: rgba(148, 163, 184, 0.3);
+  --bm-total-border: rgba(148, 163, 184, 0.2);
+}
+
+.booking-materials-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.booking-materials-card {
+  background: var(--bm-card-bg);
+  border: 1px solid var(--bm-card-border);
+  border-radius: 14px;
+  padding: 18px;
+  color: var(--bm-text);
+}
+
+.booking-materials-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.booking-materials-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--bm-heading);
+}
+
+.booking-materials-header span {
+  font-size: 0.88rem;
+  color: var(--bm-muted);
+}
+
+.booking-materials-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.booking-materials-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--bm-row-bg);
+  color: var(--bm-text);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.booking-materials-row p,
+.booking-extras-name p {
+  margin: 4px 0 0;
+  font-size: 0.86rem;
+  color: var(--bm-muted);
+}
+
+.booking-materials-qty {
+  min-width: 48px;
+  text-align: right;
+  font-weight: 700;
+  color: var(--bm-heading);
+}
+
+.booking-extras-table {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.booking-extras-head,
+.booking-extras-item {
+  display: grid;
+  grid-template-columns: minmax(180px, 2fr) minmax(90px, 0.9fr) minmax(150px, 1.2fr) minmax(90px, 0.9fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.booking-extras-head {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bm-muted);
+  padding: 0 4px;
+}
+
+.booking-extras-item {
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--bm-row-bg);
+  color: var(--bm-text);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.booking-extras-name strong,
+.booking-extras-price,
+.booking-extras-subtotal {
+  color: var(--bm-heading);
+}
+
+.booking-qty-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.booking-qty-control button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--bm-qty-border);
+  border-radius: 10px;
+  background: var(--bm-qty-bg);
+  color: var(--bm-qty-text);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.booking-qty-control input {
+  width: 58px;
+  height: 34px;
+  border: 1px solid var(--bm-input-border);
+  border-radius: 10px;
+  background: var(--bm-input-bg);
+  color: var(--bm-heading);
+  text-align: center;
+  font-weight: 700;
+}
+
+.booking-extra-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--bm-total-border);
+  color: var(--bm-heading);
+}
+
+.booking-materials-empty,
+.booking-materials-error {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+}
+
+.booking-materials-empty {
+  background: var(--bm-row-bg);
+  color: var(--bm-muted);
+}
+
+.booking-materials-error {
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+}
+
+@media (max-width: 768px) {
+  .booking-extras-head {
+    display: none;
+  }
+
+  .booking-extras-item {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-qty-control {
+    justify-content: flex-start;
+  }
+}

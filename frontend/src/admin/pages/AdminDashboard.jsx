@@ -6,11 +6,12 @@ import AddDome from './AddDome';
 import StallLayout from './StallLayout';
 import ManageStalls from './ManageStalls';
 import ManageDomes from './ManageDomes';
+import ManageMaterials from './ManageMaterials';
 import DashboardStats from './DashboardStats';
 import BookingManagement from './BookingManagement';
 import '../styles/admin.css';
 
-const VALID_SECTIONS = ['dashboard-stats', 'dome-report', 'add-dome', 'manage-domes', 'stall-layout', 'manage-stalls', 'manage-bookings'];
+const VALID_SECTIONS = ['dashboard-stats', 'dome-report', 'add-dome', 'manage-domes', 'stall-layout', 'manage-stalls', 'manage-materials', 'manage-bookings'];
 
 const getSectionFromPath = (pathName) => {
   const segments = pathName.split('/').filter(Boolean);
@@ -46,6 +47,7 @@ const AdminDashboard = () => {
         {activeSection === 'manage-domes' && <ManageDomes />}
         {activeSection === 'stall-layout' && <StallLayout setStallsData={setStallsData} />}
         {activeSection === 'manage-stalls' && <ManageStalls stallsData={stallsData} setStallsData={setStallsData} />}
+        {activeSection === 'manage-materials' && <ManageMaterials />}
         {activeSection === 'manage-bookings' && <BookingManagement />}
       </div>
     </div>

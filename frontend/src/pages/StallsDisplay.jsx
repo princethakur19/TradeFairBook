@@ -2,9 +2,17 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
+import BookingMaterialsSection from "../components/booking/BookingMaterialsSection";
 import api from "../api/axios";
+import { getActiveMaterialsByDome } from "../services/materialService";
 import { getStallsByDome } from "../services/stallService";
 import { getLoggedInUserId } from "../utils/auth";
+import {
+  DEFAULT_INCLUDED_MATERIALS,
+  buildSelectedExtraMaterials,
+  getExtraMaterialsTotal,
+  getGrandTotal
+} from "../utils/bookingMaterials";
 import "../styles/stallsDisplay.css";
 
 const StallsDisplay = () => {
@@ -17,6 +25,10 @@ const StallsDisplay = () => {
   const [filterSide, setFilterSide] = useState("ALL");
   const [selectedStalls, setSelectedStalls] = useState([]);
   const [showBookingModal, setShowBookingModal] = useState(false);
+  const [availableMaterials, setAvailableMaterials] = useState([]);
+  const [materialsLoading, setMaterialsLoading] = useState(true);
+  const [materialsError, setMaterialsError] = useState("");
+  const [materialQuantities, setMaterialQuantities] = useState({});
 
   const fetchStalls = useCallback(async () => {
     try {
@@ -39,6 +51,25 @@ const StallsDisplay = () => {
     window.scrollTo(0, 0);
     fetchStalls();
   }, [fetchStalls]);
+
+  useEffect(() => {
+    const fetchMaterials = async () => {
+      try {
+        setMaterialsLoading(true);
+        setMaterialsError("");
+        const materials = await getActiveMaterialsByDome(domeId);
+        setAvailableMaterials(materials);
+      } catch (error) {
+        console.error("Error fetching materials:", error);
+        setMaterialsError("Failed to load extra materials.");
+        setAvailableMaterials([]);
+      } finally {
+        setMaterialsLoading(false);
+      }
+    };
+
+    fetchMaterials();
+  }, [domeId]);
 
   const filteredStalls = useMemo(() => {
     if (filterSide === "ALL") return stalls;
@@ -65,6 +96,31 @@ const StallsDisplay = () => {
     () => selectedStalls.map((stall) => stall.stallNumber).join(", "),
     [selectedStalls]
   );
+
+  const selectedExtraMaterials = useMemo(
+    () => buildSelectedExtraMaterials(availableMaterials, materialQuantities),
+    [availableMaterials, materialQuantities]
+  );
+
+  const extraMaterialTotal = useMemo(
+    () => getExtraMaterialsTotal(selectedExtraMaterials),
+    [selectedExtraMaterials]
+  );
+
+  const grandTotal = useMemo(
+    () => getGrandTotal(totalSelectedAmount, extraMaterialTotal),
+    [extraMaterialTotal, totalSelectedAmount]
+  );
+
+  const handleQuantityChange = useCallback((materialId, nextValue) => {
+    const parsed = Number.parseInt(nextValue, 10);
+    const safeQuantity = Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+
+    setMaterialQuantities((prev) => ({
+      ...prev,
+      [materialId]: safeQuantity
+    }));
+  }, []);
 
   const getStatusColor = (status) => {
     if (status === "AVAILABLE") return "#16a34a";
@@ -112,7 +168,12 @@ const StallsDisplay = () => {
       state: {
         bookingContext: {
           domeId,
-          amount: totalSelectedAmount,
+          amount: grandTotal,
+          stallAmount: totalSelectedAmount,
+          extraMaterialTotal,
+          grandTotal,
+          defaultMaterials: DEFAULT_INCLUDED_MATERIALS,
+          extraMaterials: selectedExtraMaterials,
           stallNumber: selectedStallNumbers,
           stallIds: selectedStalls.map((stall) => stall._id),
           stalls: selectedStalls.map((stall) => ({
@@ -124,7 +185,16 @@ const StallsDisplay = () => {
         }
       }
     });
-  }, [domeId, navigate, selectedStallNumbers, selectedStalls, totalSelectedAmount]);
+  }, [
+    domeId,
+    extraMaterialTotal,
+    grandTotal,
+    navigate,
+    selectedExtraMaterials,
+    selectedStallNumbers,
+    selectedStalls,
+    totalSelectedAmount
+  ]);
 
   if (loading) {
     return (
@@ -264,9 +334,21 @@ const StallsDisplay = () => {
               <div className="booking-details">
                 <p><strong>Stalls:</strong> {selectedStallNumbers}</p>
                 <p><strong>Count:</strong> {selectedStalls.length}</p>
-                <p><strong>Total Price:</strong> INR {totalSelectedAmount.toLocaleString()}</p>
+                <p><strong>Stall Price:</strong> INR {totalSelectedAmount.toLocaleString()}</p>
+                <p><strong>Extra Materials:</strong> INR {extraMaterialTotal.toLocaleString()}</p>
+                <p><strong>Grand Total:</strong> INR {grandTotal.toLocaleString()}</p>
                 <p><strong>Dome:</strong> {domeData?.domeName || domeData?.name}</p>
               </div>
+
+              <BookingMaterialsSection
+                includedMaterials={DEFAULT_INCLUDED_MATERIALS}
+                availableMaterials={availableMaterials}
+                materialQuantities={materialQuantities}
+                onQuantityChange={handleQuantityChange}
+                loading={materialsLoading}
+                error={materialsError}
+                extraMaterialTotal={extraMaterialTotal}
+              />
 
               <div className="booking-terms">
                 <p>By confirming, you agree to the booking terms and conditions.</p>

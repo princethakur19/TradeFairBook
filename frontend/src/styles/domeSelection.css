@@ -162,14 +162,52 @@
 
 .dome-badge {
   position: absolute; top: 15px; right: 15px;
-  background: white; 
+  background: #ffffff;
+  color: #1e293b;
+  border: 1px solid rgba(148, 163, 184, 0.35);
   padding: 6px 12px; 
   border-radius: 30px; 
   font-size: 0.75rem; 
   font-weight: 700;
+  line-height: 1;
+  min-width: 84px;
+  text-align: center;
+  letter-spacing: 0.04em;
   box-shadow: 0 4px 10px rgba(0,0,0,0.15);
   z-index: 2;
   text-transform: uppercase;
+}
+
+.dome-badge.active,
+.dome-badge.available {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #86efac;
+}
+
+.dome-badge.inactive {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+
+[data-theme="dark"] .dome-badge {
+  background: #e2e8f0;
+  color: #0f172a;
+  border-color: rgba(148, 163, 184, 0.45);
+}
+
+[data-theme="dark"] .dome-badge.active,
+[data-theme="dark"] .dome-badge.available {
+  background: rgba(34, 197, 94, 0.2);
+  color: #bbf7d0;
+  border-color: rgba(74, 222, 128, 0.45);
+}
+
+[data-theme="dark"] .dome-badge.inactive {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fecaca;
+  border-color: rgba(248, 113, 113, 0.4);
 }
 
 /* Content Section */

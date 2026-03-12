@@ -54,6 +54,7 @@ const Home = () => {
   };
 
   const formatPrice = (value) => `INR ${Number(value || 0).toLocaleString()}`;
+  const getDomeStatusClass = (status) => (status || "INACTIVE").toLowerCase();
 
   return (
     <div className="home-wrapper">
@@ -81,13 +82,6 @@ const Home = () => {
               alt="Exhibition Center"
             />
           </div>
-          <div className="floating-badge">
-            <div className="badge-icon"><i className="fas fa-check"></i></div>
-            <div>
-              <strong>200+ Stalls</strong>
-              <div style={{ fontSize: "0.8rem", opacity: 0.8 }}>Booked this week</div>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -114,7 +108,7 @@ const Home = () => {
                     }}
                   />
                   <div className="dome-overlay"></div>
-                  <span className="dome-badge" style={{ color: "#F59E0B" }}>
+                  <span className={`dome-badge ${getDomeStatusClass(dome.status)}`}>
                     {dome.status || "INACTIVE"}
                   </span>
                 </div>

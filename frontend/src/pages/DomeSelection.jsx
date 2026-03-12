@@ -44,8 +44,8 @@ const DomeSelection = () => {
   );
 
   const formatPrice = (value) => `INR ${Number(value || 0).toLocaleString()}`;
-
   const isDomeActive = (status) => status === "ACTIVE" || status === "AVAILABLE";
+  const getDomeStatusClass = (status) => (status || "INACTIVE").toLowerCase();
 
   return (
     <>
@@ -95,7 +95,9 @@ const DomeSelection = () => {
                     />
 
                     <div className="dome-overlay"></div>
-                    <span className="dome-badge">{dome.status || "INACTIVE"}</span>
+                    <span className={`dome-badge ${getDomeStatusClass(dome.status)}`}>
+                      {dome.status || "INACTIVE"}
+                    </span>
                   </div>
 
                   <div className="dome-content">

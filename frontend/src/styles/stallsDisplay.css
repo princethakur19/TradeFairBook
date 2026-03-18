@@ -46,16 +46,17 @@
 }
 
 .header-top {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  max-width: 600px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  max-width: 460px;
   margin: 0 auto 20px;
-  margin-bottom: 20px;
 }
 
 .header-action-btn {
-  width: 100%;
+  min-width: 180px;
   min-height: 48px;
   display: inline-flex;
   align-items: center;

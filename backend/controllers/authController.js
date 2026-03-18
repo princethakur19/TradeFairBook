@@ -55,8 +55,21 @@ const login = async (req, res) => {
       return res.status(400).json({ msg: "Invalid credentials" });
     }
 
+    const publicUser = {
+      id: user._id,
+      fullname: user.fullname,
+      email: user.email,
+      company: user.company,
+      role: normalizedUserRole
+    };
+
     const token = jwt.sign(
-      { id: user._id, role: normalizedUserRole },
+      {
+        id: user._id,
+        role: normalizedUserRole,
+        fullname: user.fullname,
+        email: user.email
+      },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
@@ -64,7 +77,8 @@ const login = async (req, res) => {
     return res.json({
       success: true,
       token,
-      role: normalizedUserRole
+      role: normalizedUserRole,
+      user: publicUser
     });
   } catch (_err) {
     return res.status(500).json({ msg: "Server error" });

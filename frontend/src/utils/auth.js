@@ -1,4 +1,4 @@
-const decodeJwtPayload = (token) => {
+export const decodeJwtPayload = (token) => {
   if (!token) return null;
 
   try {
@@ -57,4 +57,42 @@ export const getLoggedInUserId = () => {
   const token = localStorage.getItem("token");
   const payload = decodeJwtPayload(token);
   return payload?._id || payload?.id || payload?.userId || null;
+};
+
+const parseStoredUser = () => {
+  const rawUser = localStorage.getItem("user");
+  if (!rawUser) return null;
+
+  try {
+    return JSON.parse(rawUser);
+  } catch (_error) {
+    return null;
+  }
+};
+
+export const getUserDisplayName = () => {
+  const storedUser = parseStoredUser();
+  if (storedUser) {
+    return (
+      storedUser.fullname ||
+      storedUser.name ||
+      storedUser.email ||
+      storedUser.username ||
+      ""
+    );
+  }
+
+  const token = localStorage.getItem("token");
+  const payload = decodeJwtPayload(token);
+  if (payload) {
+    return (
+      payload.fullname ||
+      payload.name ||
+      payload.email ||
+      payload.username ||
+      ""
+    );
+  }
+
+  return "";
 };

@@ -35,6 +35,12 @@ const Login = () => {
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("role", data.role);
+      if (data?.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+        if (data.user.id || data.user._id) {
+          localStorage.setItem("userId", data.user.id || data.user._id);
+        }
+      }
 
       if (["ADMIN", "SUPER_ADMIN"].includes(String(data.role || "").toUpperCase())) {
         navigate("/admin");

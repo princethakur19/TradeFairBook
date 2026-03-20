@@ -65,7 +65,7 @@ export const generateStallArray = (config) => {
 
 
 /* ======================================================
-   Save stalls to database
+   Save stalls to databasee
 ====================================================== */
 export const saveStallsToDB = async (stalls) => {
   try {

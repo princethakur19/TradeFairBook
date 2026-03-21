@@ -1,31 +1,43 @@
-import React, { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { clearAuthStorage, hasValidSession } from "../../utils/auth";
-import "../../styles/layout.css"; 
+import React, { useEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { clearAuthStorage, getUserDisplayName, hasValidSession } from "../../utils/auth";
+import "../../styles/layout.css";
 
 const Navbar = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userName, setUserName] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const profileRef = useRef(null);
+
   const navigate = useNavigate();
-  const location = useLocation(); 
+  const location = useLocation();
 
-  // ✅ FIXED: Wrapped in setTimeout to prevent "Cascading Render" error
   useEffect(() => {
-    const timer = setTimeout(() => {
-      // 1. Close mobile menu
-      setIsMobileMenuOpen(false);
+    setIsMobileMenuOpen(false);
+    setIsDropdownOpen(false);
 
-      // 2. Check login status
-      setIsLoggedIn(hasValidSession());
-    }, 0); // 0ms delay pushes this to the end of the queue
-
-    return () => clearTimeout(timer); // Cleanup prevents memory leaks
+    const sessionActive = hasValidSession();
+    setIsLoggedIn(sessionActive);
+    setUserName(sessionActive ? getUserDisplayName() : "");
   }, [location]);
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
 
   const handleLogout = () => {
     clearAuthStorage();
     setIsLoggedIn(false);
+    setUserName("");
+    setIsDropdownOpen(false);
     navigate("/login");
   };
 
@@ -40,6 +52,11 @@ const Navbar = () => {
     }
   };
 
+  const getProfileInitial = () => {
+    const source = String(userName || "U").trim();
+    return source.charAt(0).toUpperCase();
+  };
+
   return (
     <header className="header">
       <div className="nav-container">
@@ -51,26 +68,54 @@ const Navbar = () => {
           <li><Link to="/" className="nav-link">Home</Link></li>
           <li><Link to="/domes" className="nav-link">Domes</Link></li>
           <li><a href="/#how-it-works" className="nav-link">How it Works</a></li>
-          
+
           <li>
             <button className="theme-toggle" onClick={toggleTheme}>
               <i className="fas fa-adjust"></i>
             </button>
           </li>
 
-          <li>
+          <li className="nav-profile-wrapper" ref={profileRef}>
             {isLoggedIn ? (
-              <button 
-                onClick={handleLogout} 
-                className="btn-primary" 
-                style={{ backgroundColor: "#ef4444", border: "none" }}
-              >
-                Logout
-              </button>
+              <>
+                <button
+                  type="button"
+                  className={`profile-trigger ${isDropdownOpen ? "active" : ""}`}
+                  onClick={() => setIsDropdownOpen((prev) => !prev)}
+                  aria-expanded={isDropdownOpen}
+                  aria-haspopup="menu"
+                >
+                  <span className="profile-avatar">{getProfileInitial()}</span>
+                  <span className="profile-name">{userName || "My Account"}</span>
+                  <i className={`fas ${isDropdownOpen ? "fa-chevron-up" : "fa-chevron-down"} profile-caret`}></i>
+                </button>
+
+                <div className={`profile-dropdown ${isDropdownOpen ? "open" : ""}`} role="menu">
+                  <Link
+                    to="/profile"
+                    className="dropdown-item"
+                    onClick={() => setIsDropdownOpen(false)}
+                  >
+                    My Profile
+                  </Link>
+                  <button
+                    type="button"
+                    className="dropdown-item logout-item"
+                    onClick={handleLogout}
+                  >
+                    Logout
+                  </button>
+                </div>
+              </>
             ) : (
-              <Link to="/login" className="btn-primary">
-                Login / Register
-              </Link>
+              <div className="auth-buttons">
+                <Link to="/login" className="btn-secondary">
+                  Login
+                </Link>
+                <Link to="/register" className="btn-primary">
+                  Register
+                </Link>
+              </div>
             )}
           </li>
         </ul>

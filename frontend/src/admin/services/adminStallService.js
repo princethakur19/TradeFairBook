@@ -1,7 +1,7 @@
 import api from "../../api/axios";
 
 /* ======================================================
-   Generate stall array (C-shape style)
+   Generate stall array (C-shape stylee)
 ====================================================== */
 export const generateStallArray = (config) => {
   const { topCount, centerCount, leftCount, rightCount, domeId } = config;

@@ -9,20 +9,7 @@ import {
 
 const STATUS_OPTIONS = ["ALL", "PENDING", "APPROVED", "REJECTED", "CANCELLED"];
 
-const statusBadgeStyle = (status) => {
-  switch (status) {
-    case "APPROVED":
-      return { color: "#14de67" };
-    case "PENDING":
-      return { color: "#ffb020" };
-    case "REJECTED":
-      return { color: "#ff6b6b" };
-    case "CANCELLED":
-      return { color: "#9ea4b0" };
-    default:
-      return { color: "#9ea4b0" };
-  }
-};
+const getStatusClassName = (status) => String(status || "").toLowerCase();
 
 const formatInr = (value) =>
   new Intl.NumberFormat("en-IN", {
@@ -110,7 +97,7 @@ const BookingManagement = () => {
         <span className="count-badge">{bookings.length} Rows</span>
       </div>
 
-      <div className="report-filters-row">
+      <div className="report-filters-row booking-filter-row">
         <select value={selectedStatus} onChange={onStatusChange}>
           {STATUS_OPTIONS.map((status) => (
             <option key={status} value={status}>
@@ -131,17 +118,17 @@ const BookingManagement = () => {
       {message ? <p className="manage-feedback manage-feedback-success">{message}</p> : null}
       {error ? <p className="manage-feedback manage-feedback-error">{error}</p> : null}
 
-      <div className="table-responsive-wrapper">
-        <table className="admin-table">
+      <div className="table-responsive-wrapper booking-table-wrapper">
+        <table className="admin-table booking-admin-table">
           <thead>
             <tr>
-              <th>USER</th>
-              <th>EMAIL</th>
-              <th>DOME</th>
-              <th>STALL</th>
-              <th>AMOUNT</th>
-              <th>STATUS</th>
-              <th>ACTION</th>
+              <th className="col-user">USER</th>
+              <th className="col-email">EMAIL</th>
+              <th className="col-dome">DOME</th>
+              <th className="col-stall">STALL</th>
+              <th className="col-amount">AMOUNT</th>
+              <th className="col-status">STATUS</th>
+              <th className="col-action">ACTION</th>
             </tr>
           </thead>
           <tbody>
@@ -154,18 +141,18 @@ const BookingManagement = () => {
             ) : bookings.length ? (
               bookings.map((booking) => (
                 <tr key={booking._id}>
-                  <td>{booking.user?.fullname || "N/A"}</td>
-                  <td>{booking.user?.email || "N/A"}</td>
-                  <td>{booking.dome?.domeName || "N/A"}</td>
-                  <td>{booking.stall?.stallNumber || "N/A"}</td>
-                  <td>{formatInr(booking.amount)}</td>
-                  <td>
-                    <span className="status-pill" style={statusBadgeStyle(booking.status)}>
+                  <td className="col-user">{booking.user?.fullname || "N/A"}</td>
+                  <td className="col-email">{booking.user?.email || "N/A"}</td>
+                  <td className="col-dome">{booking.dome?.domeName || "N/A"}</td>
+                  <td className="col-stall">{booking.stall?.stallNumber || "N/A"}</td>
+                  <td className="col-amount">{formatInr(booking.amount)}</td>
+                  <td className="col-status">
+                    <span className={`status-pill booking-status ${getStatusClassName(booking.status)}`}>
                       {booking.status}
                     </span>
                   </td>
-                  <td>
-                    <div className="action-buttons">
+                  <td className="col-action">
+                    <div className="action-buttons booking-action-buttons">
                       <button
                         className="edit-icon-btn save-btn"
                         onClick={() => runAction(approveBooking, booking._id)}

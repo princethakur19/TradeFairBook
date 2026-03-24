@@ -42,7 +42,7 @@ app.get("/", (req, res) => {
   res.json({ message: "Trade Fair Backend Running Successfully" });
 });
 
-/* Error Handler */
+/* Error Handlerr */
 app.use((err, _req, res, _next) => {
   if (!err) {
     return res.status(500).json({ success: false, message: "Unknown server error" });

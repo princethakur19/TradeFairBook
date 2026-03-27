@@ -1,6 +1,8 @@
 const Booking = require("../models/Booking");
 const User = require("../models/User");
 
+const REVENUE_BOOKING_STATUSES = ["PAID"];
+
 exports.getDashboardStats = async (_req, res) => {
   try {
     const [totalUsers, totalBookings, statusCounts, revenueAgg, revenueByDome] = await Promise.all([
@@ -15,20 +17,28 @@ exports.getDashboardStats = async (_req, res) => {
         }
       ]),
       Booking.aggregate([
-        { $match: { status: { $in: ["APPROVED", "PAID"] } } },
+        { $match: { status: { $in: REVENUE_BOOKING_STATUSES } } },
         {
           $group: {
             _id: null,
-            totalRevenue: { $sum: "$amount" }
+            totalRevenue: {
+              $sum: {
+                $ifNull: ["$grandTotal", "$amount"]
+              }
+            }
           }
         }
       ]),
       Booking.aggregate([
-        { $match: { status: { $in: ["APPROVED", "PAID"] } } },
+        { $match: { status: { $in: REVENUE_BOOKING_STATUSES } } },
         {
           $group: {
             _id: "$dome",
-            revenue: { $sum: "$amount" }
+            revenue: {
+              $sum: {
+                $ifNull: ["$grandTotal", "$amount"]
+              }
+            }
           }
         },
         {
@@ -62,7 +72,8 @@ exports.getDashboardStats = async (_req, res) => {
         totalUsers,
         totalBookings,
         pendingBookings: statusCountMap.PENDING || 0,
-        approvedBookings: (statusCountMap.APPROVED || 0) + (statusCountMap.PAID || 0),
+        approvedBookings: statusCountMap.APPROVED || 0,
+        paidBookings: statusCountMap.PAID || 0,
         rejectedBookings: statusCountMap.REJECTED || 0,
         totalRevenue: revenueAgg[0]?.totalRevenue || 0,
         revenueByDome

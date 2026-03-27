@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const Booking = require("../models/Booking");
 const Stall = require("../models/Stall");
 const AadhaarVerification = require("../models/AadhaarVerification");
@@ -22,6 +23,15 @@ const bookingPopulate = [
 
 const normalizeStatus = (value) => String(value || "").toUpperCase();
 const toObjectIdString = (value) => String(value || "").trim();
+const canManageAllBookings = (role) => {
+  const normalizedRole = String(role || "").toUpperCase();
+  return normalizedRole === "ADMIN" || normalizedRole === "SUPER_ADMIN";
+};
+const getBookingOwnerId = (booking) => String(booking?.user?._id || booking?.user || "");
+const getBookingAmountInPaise = (booking) => Math.max(
+  0,
+  Math.round(Number(booking?.grandTotal || booking?.amount || 0) * 100)
+);
 const toPositiveInteger = (value) => {
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
@@ -52,6 +62,59 @@ const syncStallStatusForBooking = async (bookingId) => {
     status: activeCount > 0 ? "BOOKED" : "AVAILABLE"
   });
 };
+
+const createRazorpayOrder = async (booking) => {
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+
+  if (!keyId || !keySecret) {
+    throw new Error("Razorpay keys are not configured");
+  }
+
+  const amount = getBookingAmountInPaise(booking);
+  if (!amount) {
+    throw new Error("Booking amount must be greater than zero");
+  }
+
+  const receipt = `bk_${String(booking._id)}_${Date.now().toString().slice(-8)}`;
+  const response = await fetch("https://api.razorpay.com/v1/orders", {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString("base64")}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      amount,
+      currency: "INR",
+      receipt,
+      notes: {
+        bookingId: String(booking._id),
+        userId: getBookingOwnerId(booking),
+        stallId: String(booking?.stall?._id || booking?.stall || "")
+      }
+    })
+  });
+
+  const payload = await response.json();
+  if (!response.ok) {
+    const error = new Error(
+      payload?.error?.description ||
+      payload?.error?.reason ||
+      "Unable to create Razorpay order"
+    );
+    error.statusCode = response.status;
+    error.payload = payload;
+    throw error;
+  }
+
+  return payload;
+};
+
+const createRazorpaySignature = (orderId, paymentId) =>
+  crypto
+    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+    .update(`${orderId}|${paymentId}`)
+    .digest("hex");
 
 /* ===============================
    CREATE BOOKING
@@ -293,6 +356,156 @@ exports.getAllBookings = async (_req, res) => {
 };
 
 /* ===============================
+   CREATE PAYMENT ORDER
+================================= */
+exports.createPaymentOrder = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id).populate(bookingPopulate);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found"
+      });
+    }
+
+    if (!canManageAllBookings(req.user?.role) && getBookingOwnerId(booking) !== String(req.user?.id || "")) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to pay for this booking"
+      });
+    }
+
+    if (String(booking.status || "").toUpperCase() === "PAID") {
+      return res.status(400).json({
+        success: false,
+        message: "Payment is already completed for this booking"
+      });
+    }
+
+    if (String(booking.status || "").toUpperCase() !== "APPROVED") {
+      return res.status(400).json({
+        success: false,
+        message: "Only approved bookings can proceed to payment"
+      });
+    }
+
+    const order = await createRazorpayOrder(booking);
+    booking.paymentOrderId = order.id;
+    await booking.save();
+
+    return res.status(200).json({
+      success: true,
+      keyId: process.env.RAZORPAY_KEY_ID,
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency || "INR",
+      bookingId: String(booking._id),
+      bookingTitle: `${booking?.dome?.domeName || "TradeFairBook"} - Stall ${booking?.stall?.stallNumber || "N/A"}`,
+      customer: {
+        name: booking?.user?.fullname || "",
+        email: booking?.user?.email || ""
+      }
+    });
+  } catch (error) {
+    console.error("Create Payment Order Error:", error);
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/* ===============================
+   VERIFY PAYMENT
+================================= */
+exports.verifyPayment = async (req, res) => {
+  try {
+    const {
+      razorpay_order_id: orderId,
+      razorpay_payment_id: paymentId,
+      razorpay_signature: paymentSignature
+    } = req.body || {};
+
+    if (!orderId || !paymentId || !paymentSignature) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment verification details are required"
+      });
+    }
+
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found"
+      });
+    }
+
+    if (!canManageAllBookings(req.user?.role) && getBookingOwnerId(booking) !== String(req.user?.id || "")) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to verify payment for this booking"
+      });
+    }
+
+    const currentStatus = String(booking.status || "").toUpperCase();
+    if (currentStatus === "PAID") {
+      const existingPaidBooking = await Booking.findById(booking._id).populate(bookingPopulate);
+      return res.status(200).json({
+        success: true,
+        message: "Payment already verified for this booking",
+        data: existingPaidBooking
+      });
+    }
+
+    if (currentStatus !== "APPROVED") {
+      return res.status(400).json({
+        success: false,
+        message: "Only approved bookings can be marked as paid"
+      });
+    }
+
+    if (booking.paymentOrderId && booking.paymentOrderId !== orderId) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment order does not match this booking"
+      });
+    }
+
+    const expectedSignature = createRazorpaySignature(orderId, paymentId);
+    if (expectedSignature !== paymentSignature) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment verification failed"
+      });
+    }
+
+    booking.status = "PAID";
+    booking.paymentOrderId = orderId;
+    booking.paymentId = paymentId;
+    booking.paymentSignature = paymentSignature;
+    booking.paidAt = new Date();
+    await booking.save();
+    await syncStallStatusForBooking(booking._id);
+
+    const updatedBooking = await Booking.findById(booking._id).populate(bookingPopulate);
+
+    return res.status(200).json({
+      success: true,
+      message: "Payment completed successfully",
+      data: updatedBooking
+    });
+  } catch (error) {
+    console.error("Verify Payment Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/* ===============================
    UPDATE BOOKING STATUS (LEGACY API)
 ================================= */
 exports.updateBookingStatus = async (req, res) => {
@@ -350,7 +563,7 @@ exports.cancelBooking = async (req, res) => {
     }
 
     const role = String(req.user?.role || "").toUpperCase();
-    const canManageAll = role === "ADMIN" || role === "SUPER_ADMIN";
+    const canManageAll = canManageAllBookings(role);
     if (!canManageAll && String(booking.user) !== String(req.user?.id)) {
       return res.status(403).json({
         success: false,

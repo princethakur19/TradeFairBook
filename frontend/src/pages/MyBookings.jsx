@@ -2,12 +2,25 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
-import { cancelUserBooking, getUserBookings } from "../services/bookingService";
+import {
+  cancelUserBooking,
+  createBookingPaymentOrder,
+  getUserBookings,
+  verifyBookingPayment
+} from "../services/bookingService";
 import { getLoggedInUserId } from "../utils/auth";
 import "../styles/layout.css";
 import "../styles/myBookings.css";
 
 const getStatusClassName = (status) => String(status || "").toLowerCase();
+const getBookingStatusLabel = (status) => {
+  const normalizedStatus = String(status || "").toUpperCase();
+
+  if (normalizedStatus === "APPROVED") return "Payment Pending";
+  if (normalizedStatus === "PAID") return "Payment Confirmed";
+
+  return normalizedStatus || "PENDING";
+};
 
 const formatInr = (value) =>
   new Intl.NumberFormat("en-IN", {
@@ -29,11 +42,38 @@ const formatDate = (value) => {
   });
 };
 
+const loadRazorpayCheckout = () =>
+  new Promise((resolve, reject) => {
+    if (window.Razorpay) {
+      resolve(window.Razorpay);
+      return;
+    }
+
+    const existingScript = document.querySelector('script[data-razorpay-checkout="true"]');
+    if (existingScript) {
+      existingScript.addEventListener("load", () => resolve(window.Razorpay), { once: true });
+      existingScript.addEventListener(
+        "error",
+        () => reject(new Error("Failed to load Razorpay checkout.")),
+        { once: true }
+      );
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.dataset.razorpayCheckout = "true";
+    script.onload = () => resolve(window.Razorpay);
+    script.onerror = () => reject(new Error("Failed to load Razorpay checkout."));
+    document.body.appendChild(script);
+  });
+
 const getBookingStageNote = (status) => {
   const normalizedStatus = String(status || "").toUpperCase();
 
   if (normalizedStatus === "APPROVED") {
-    return "Approved by admin. You can continue to payment now.";
+    return "Payment is pending. This booking is approved and ready for payment.";
   }
 
   if (normalizedStatus === "REJECTED") {
@@ -45,7 +85,7 @@ const getBookingStageNote = (status) => {
   }
 
   if (normalizedStatus === "PAID") {
-    return "Payment completed successfully.";
+    return "Payment confirmed successfully.";
   }
 
   return "Pending admin approval. Payment will unlock after approval.";
@@ -112,13 +152,77 @@ const MyBookings = () => {
     }
   };
 
-  const handlePayNow = async (bookingId) => {
+  const handlePayNow = async (booking) => {
+    let checkoutOpened = false;
+
     try {
-      setActivePayId(bookingId);
+      setActivePayId(booking._id);
       setError("");
-      setMessage("Razorpay integration will be connected here next. This booking is approved and ready for payment.");
+      setMessage("");
+
+      await loadRazorpayCheckout();
+      const orderResponse = await createBookingPaymentOrder(booking._id);
+
+      if (!window.Razorpay) {
+        throw new Error("Razorpay checkout is unavailable right now.");
+      }
+
+      const razorpay = new window.Razorpay({
+        key: orderResponse.keyId,
+        amount: orderResponse.amount,
+        currency: orderResponse.currency || "INR",
+        name: "TradeFairBook",
+        description: orderResponse.bookingTitle || "Stall booking payment",
+        order_id: orderResponse.orderId,
+        handler: async (paymentResponse) => {
+          try {
+            const verificationResponse = await verifyBookingPayment(booking._id, paymentResponse);
+            setMessage(verificationResponse.message || "Payment completed successfully.");
+            await loadBookings();
+          } catch (verificationError) {
+            setError(
+              verificationError.response?.data?.message ||
+              verificationError.message ||
+              "Payment was captured, but verification failed."
+            );
+          } finally {
+            setActivePayId("");
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setActivePayId("");
+          }
+        },
+        prefill: {
+          name: orderResponse.customer?.name || "",
+          email: orderResponse.customer?.email || ""
+        },
+        notes: {
+          bookingId: orderResponse.bookingId
+        },
+        theme: {
+          color: "#0f766e"
+        }
+      });
+
+      razorpay.on("payment.failed", (event) => {
+        setError(event?.error?.description || "Payment failed. Please try again.");
+        setActivePayId("");
+      });
+
+      razorpay.open();
+      checkoutOpened = true;
+    } catch (paymentError) {
+      setError(
+        paymentError.response?.data?.message ||
+        paymentError.message ||
+        "Unable to start payment right now."
+      );
     } finally {
-      setActivePayId("");
+      if (!checkoutOpened) {
+        setActivePayId("");
+      }
     }
   };
 
@@ -158,7 +262,7 @@ const MyBookings = () => {
                         <p>{booking.dome?.location || "Location unavailable"}</p>
                       </div>
                       <span className={`booking-status-pill ${getStatusClassName(booking.status)}`}>
-                        {booking.status || "PENDING"}
+                        {getBookingStatusLabel(booking.status)}
                       </span>
                     </div>
 
@@ -205,7 +309,7 @@ const MyBookings = () => {
                         <button
                           type="button"
                           className="btn-primary booking-action-btn"
-                          onClick={() => handlePayNow(booking._id)}
+                          onClick={() => handlePayNow(booking)}
                           disabled={activePayId === booking._id}
                         >
                           {activePayId === booking._id ? "Opening..." : "Pay Now"}

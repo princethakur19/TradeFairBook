@@ -5,7 +5,9 @@ const {
   getUserBookings,
   getAllBookings,
   updateBookingStatus,
-  cancelBooking
+  cancelBooking,
+  createPaymentOrder,
+  verifyPayment
 } = require("../controllers/bookingController");
 
 const { protect, adminOnly } = require("../middleware/authMiddleware");
@@ -14,6 +16,8 @@ const { protect, adminOnly } = require("../middleware/authMiddleware");
 router.post("/create", protect, createBooking);
 router.post("/", protect, createBooking);
 router.get("/user/:userId", protect, getUserBookings);
+router.post("/:id/payment/order", protect, createPaymentOrder);
+router.post("/:id/payment/verify", protect, verifyPayment);
 router.delete("/:id", protect, cancelBooking);
 
 // ADMIN ROUTES

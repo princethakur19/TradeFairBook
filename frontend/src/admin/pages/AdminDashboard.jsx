@@ -9,6 +9,7 @@ import ManageDomes from './ManageDomes';
 import ManageMaterials from './ManageMaterials';
 import DashboardStats from './DashboardStats';
 import BookingManagement from './BookingManagement';
+import { clearAuthStorage } from '../../utils/auth';
 import '../styles/admin.css';
 
 const VALID_SECTIONS = ['dashboard-stats', 'dome-report', 'add-dome', 'manage-domes', 'stall-layout', 'manage-stalls', 'manage-materials', 'manage-bookings'];
@@ -31,9 +32,7 @@ const AdminDashboard = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    localStorage.removeItem('user');
+    clearAuthStorage();
     navigate('/login');
   };
 

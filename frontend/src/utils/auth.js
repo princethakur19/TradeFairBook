@@ -1,3 +1,5 @@
+const AUTH_KEYS = ["token", "role", "userId", "user", "redirectAfterLogin"];
+
 export const decodeJwtPayload = (token) => {
   if (!token) return null;
 
@@ -10,24 +12,73 @@ export const decodeJwtPayload = (token) => {
     const json = atob(paddedBase64);
 
     return JSON.parse(json);
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 };
 
+export const getAuthStorage = () => sessionStorage;
+
+export const getAuthItem = (key) => getAuthStorage().getItem(key);
+
+export const setAuthItem = (key, value) => {
+  if (value === undefined || value === null) {
+    getAuthStorage().removeItem(key);
+    return;
+  }
+
+  getAuthStorage().setItem(key, String(value));
+};
+
+export const removeAuthItem = (key) => getAuthStorage().removeItem(key);
+
 export const clearAuthStorage = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("role");
-  localStorage.removeItem("userId");
-  localStorage.removeItem("user");
+  AUTH_KEYS.forEach((key) => {
+    sessionStorage.removeItem(key);
+    localStorage.removeItem(key);
+  });
+};
+
+export const persistAuthSession = ({ token, role, user }) => {
+  clearAuthStorage();
+
+  setAuthItem("token", token);
+  setAuthItem("role", role);
+
+  if (user) {
+    setAuthItem("user", JSON.stringify(user));
+    const userId = user.id || user._id || user.userId;
+    if (userId) {
+      setAuthItem("userId", userId);
+    }
+  }
+};
+
+export const migrateLegacyAuthStorage = () => {
+  const hasSessionToken = sessionStorage.getItem("token");
+  const legacyToken = localStorage.getItem("token");
+
+  if (!hasSessionToken && legacyToken) {
+    AUTH_KEYS.forEach((key) => {
+      const value = localStorage.getItem(key);
+      if (value !== null) {
+        sessionStorage.setItem(key, value);
+      }
+    });
+  }
+
+  AUTH_KEYS.forEach((key) => localStorage.removeItem(key));
 };
 
 export const hasValidSession = () => {
-  const token = localStorage.getItem("token");
+  const token = getAuthItem("token");
   if (!token) return false;
 
   const payload = decodeJwtPayload(token);
-  if (!payload) return false;
+  if (!payload) {
+    clearAuthStorage();
+    return false;
+  }
 
   if (payload.exp && payload.exp * 1000 <= Date.now()) {
     clearAuthStorage();
@@ -40,27 +91,22 @@ export const hasValidSession = () => {
 export const getLoggedInUserId = () => {
   if (!hasValidSession()) return null;
 
-  const directUserId = localStorage.getItem("userId");
+  const directUserId = getAuthItem("userId");
   if (directUserId) return directUserId;
 
-  const rawUser = localStorage.getItem("user");
-  if (rawUser) {
-    try {
-      const parsedUser = JSON.parse(rawUser);
-      const parsedUserId = parsedUser?._id || parsedUser?.id || parsedUser?.userId;
-      if (parsedUserId) return parsedUserId;
-    } catch (error) {
-      // Ignore parse errors and continue with token fallback.
-    }
+  const storedUser = getStoredUser();
+  if (storedUser) {
+    const parsedUserId = storedUser?._id || storedUser?.id || storedUser?.userId;
+    if (parsedUserId) return parsedUserId;
   }
 
-  const token = localStorage.getItem("token");
+  const token = getAuthItem("token");
   const payload = decodeJwtPayload(token);
   return payload?._id || payload?.id || payload?.userId || null;
 };
 
-const parseStoredUser = () => {
-  const rawUser = localStorage.getItem("user");
+export const getStoredUser = () => {
+  const rawUser = getAuthItem("user");
   if (!rawUser) return null;
 
   try {
@@ -70,8 +116,16 @@ const parseStoredUser = () => {
   }
 };
 
+export const getStoredRole = () => String(getAuthItem("role") || "").toUpperCase();
+
+export const getRedirectAfterLogin = () => getAuthItem("redirectAfterLogin");
+
+export const setRedirectAfterLogin = (value) => setAuthItem("redirectAfterLogin", value);
+
+export const clearRedirectAfterLogin = () => removeAuthItem("redirectAfterLogin");
+
 export const getUserDisplayName = () => {
-  const storedUser = parseStoredUser();
+  const storedUser = getStoredUser();
   if (storedUser) {
     return (
       storedUser.fullname ||
@@ -82,7 +136,7 @@ export const getUserDisplayName = () => {
     );
   }
 
-  const token = localStorage.getItem("token");
+  const token = getAuthItem("token");
   const payload = decodeJwtPayload(token);
   if (payload) {
     return (

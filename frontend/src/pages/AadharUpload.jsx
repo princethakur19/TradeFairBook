@@ -184,12 +184,13 @@ const AadharUpload = () => {
         extraMaterialTotal
       });
 
-      alert(
-        `Verification successful. ${selectedStallIds.length} stall${
-          selectedStallIds.length > 1 ? "s" : ""
-        } booked successfully.`
-      );
-      navigate(`/stalls/${bookingContext.domeId}`);
+      navigate("/my-bookings", {
+        state: {
+          message: `Verification successful. ${selectedStallIds.length} stall${
+            selectedStallIds.length > 1 ? "s are" : " is"
+          } now pending admin approval.`
+        }
+      });
     } catch (submitError) {
       console.error("Booking with Aadhaar verification failed:", submitError);
       const message = submitError?.response?.data?.message || "Verification failed. Please try again.";

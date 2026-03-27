@@ -1,14 +1,15 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
+import { getAuthItem, getStoredRole, hasValidSession } from '../utils/auth';
 // Import your admin CSS here so it loads for all admin pages
 import './styles/admin.css'; 
 
 const AdminRoute = ({ children }) => {
-  const token = localStorage.getItem('token');
-  const role = String(localStorage.getItem('role') || '').toUpperCase();
+  const token = getAuthItem('token');
+  const role = getStoredRole();
   const isAdmin = Boolean(token) && (role === 'ADMIN' || role === 'SUPER_ADMIN');
 
-  if (!isAdmin) {
+  if (!hasValidSession() || !isAdmin) {
     return <Navigate to="/login" replace />;
   }
 

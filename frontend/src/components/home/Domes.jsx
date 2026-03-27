@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { hasValidSession } from "../../utils/auth";
 
 const domes = [
   {
@@ -37,7 +38,7 @@ const domes = [
 
 const Domes = () => {
   const navigate = useNavigate();
-  const isLoggedIn = !!localStorage.getItem("token");
+  const isLoggedIn = hasValidSession();
 
   const handleViewStalls = () => {
     if (!isLoggedIn) {

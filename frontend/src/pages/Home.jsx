@@ -4,6 +4,7 @@ import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import HowItWorks from "../components/home/HowItWorks";
 import { getAllDomes } from "../services/domeService";
+import { hasValidSession, setRedirectAfterLogin } from "../utils/auth";
 
 import "../styles/layout.css";
 import "../styles/home.css";
@@ -43,12 +44,12 @@ const Home = () => {
   }, []);
 
   const handleViewStalls = (domeId) => {
-    const isAuthenticated = localStorage.getItem("token");
+    const isAuthenticated = hasValidSession();
 
     if (isAuthenticated) {
       navigate(`/stalls/${domeId}`);
     } else {
-      localStorage.setItem("redirectAfterLogin", `/stalls/${domeId}`);
+      setRedirectAfterLogin(`/stalls/${domeId}`);
       navigate("/login");
     }
   };

@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import {
+  clearRedirectAfterLogin,
+  getRedirectAfterLogin,
+  persistAuthSession,
+} from "../utils/auth";
 import "../styles/auth.css";
 
 const Login = () => {
@@ -33,21 +38,18 @@ const Login = () => {
 
       const data = res.data;
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("role", data.role);
-      if (data?.user) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-        if (data.user.id || data.user._id) {
-          localStorage.setItem("userId", data.user.id || data.user._id);
-        }
-      }
+      persistAuthSession({
+        token: data.token,
+        role: data.role,
+        user: data.user,
+      });
 
       if (["ADMIN", "SUPER_ADMIN"].includes(String(data.role || "").toUpperCase())) {
         navigate("/admin");
       } else {
-        const redirectAfterLogin = localStorage.getItem("redirectAfterLogin");
+        const redirectAfterLogin = getRedirectAfterLogin();
         if (redirectAfterLogin) {
-          localStorage.removeItem("redirectAfterLogin");
+          clearRedirectAfterLogin();
           navigate(redirectAfterLogin);
         } else {
           navigate("/");

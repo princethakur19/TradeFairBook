@@ -8,6 +8,7 @@ import StallsDisplay from "./pages/StallsDisplay";
 import UserStallLayout from "./pages/UserStallLayout";
 import AadharUpload from "./pages/AadharUpload";
 import Profile from "./pages/Profile";
+import MyBookings from "./pages/MyBookings";
 
 // ADMIN
 import AdminDashboard from "./admin/pages/AdminDashboard";
@@ -30,6 +31,7 @@ function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/domes" element={<DomeSelection />} />
       <Route path="/profile" element={userStallsElement(<Profile />)} />
+      <Route path="/my-bookings" element={userStallsElement(<MyBookings />)} />
       <Route path="/stalls/:domeId" element={userStallsElement(<StallsDisplay />)} />
       <Route path="/select-stall/:domeId" element={userStallsElement(<UserStallLayout />)} />
       <Route path="/aadhar-upload" element={userStallsElement(<AadharUpload />)} />

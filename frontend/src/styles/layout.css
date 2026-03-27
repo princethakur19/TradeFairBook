@@ -179,6 +179,150 @@ body {
   align-items: center;
 }
 
+.nav-notification-wrapper {
+  display: inline-flex;
+  align-items: center;
+}
+
+.notification-trigger {
+  position: relative;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.3s, box-shadow 0.3s, color 0.3s, background-color 0.3s;
+}
+
+.notification-trigger:hover,
+.notification-trigger.active {
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.notification-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--card-bg);
+}
+
+.notification-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: min(360px, calc(100vw - 32px));
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: var(--card-bg);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.16);
+  padding: 8px;
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 1300;
+}
+
+.notification-dropdown.open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.notification-dropdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  color: var(--text-main);
+}
+
+.notification-dropdown-header strong {
+  font-size: 0.95rem;
+}
+
+.notification-dropdown-header span {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.notification-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  text-decoration: none;
+  padding: 12px;
+  border-radius: 12px;
+  color: var(--text-main);
+  transition: background-color 0.2s ease;
+}
+
+.notification-item:hover {
+  background: rgba(37, 99, 235, 0.09);
+}
+
+.notification-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.12);
+  color: var(--primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.notification-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.notification-copy strong {
+  font-size: 0.92rem;
+  color: var(--text-main);
+}
+
+.notification-copy span {
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.notification-copy small {
+  font-size: 0.76rem;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.notification-empty {
+  padding: 18px 14px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
 .profile-trigger {
   border: 1px solid var(--border-color);
   background: #ffffff;
@@ -195,6 +339,10 @@ body {
 }
 
 [data-theme="dark"] .profile-trigger {
+  background: #0f172a;
+}
+
+[data-theme="dark"] .notification-trigger {
   background: #0f172a;
 }
 
@@ -357,6 +505,16 @@ body {
   word-break: break-word;
 }
 
+.profile-inline-link {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.profile-inline-link:hover {
+  color: var(--primary-dark);
+}
+
 /* --- 5. FOOTER STYLES --- */
 .footer {
   background-color: var(--bg-body); /* Should inherit variable, but explicit rule below ensures it */
@@ -425,6 +583,16 @@ body {
     justify-content: center;
   }
 
+  .nav-notification-wrapper {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .notification-trigger {
+    width: 100%;
+    border-radius: 999px;
+  }
+
   .profile-trigger {
     width: 100%;
     justify-content: space-between;
@@ -435,6 +603,13 @@ body {
     right: 0;
     top: calc(100% + 8px);
     min-width: 100%;
+  }
+
+  .notification-dropdown {
+    left: 0;
+    right: 0;
+    top: calc(100% + 8px);
+    width: 100%;
   }
 
   .auth-buttons {

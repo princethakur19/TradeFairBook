@@ -1,25 +1,15 @@
+import { Link } from "react-router-dom";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
-import { getUserDisplayName } from "../utils/auth";
+import { getLoggedInUserId, getStoredRole, getStoredUser, getUserDisplayName } from "../utils/auth";
 import "../styles/layout.css";
 
-const readStoredUser = () => {
-  const rawUser = localStorage.getItem("user");
-  if (!rawUser) return null;
-
-  try {
-    return JSON.parse(rawUser);
-  } catch (_error) {
-    return null;
-  }
-};
-
 const Profile = () => {
-  const user = readStoredUser();
+  const user = getStoredUser();
   const displayName = getUserDisplayName() || "User";
   const email = user?.email || "Not available";
-  const userRole = user?.role || localStorage.getItem("role") || "USER";
-  const userId = user?._id || user?.id || localStorage.getItem("userId") || "Not available";
+  const userRole = user?.role || getStoredRole() || "USER";
+  const userId = user?._id || user?.id || getLoggedInUserId() || "Not available";
 
   return (
     <div className="home-wrapper">
@@ -47,6 +37,14 @@ const Profile = () => {
             <div className="profile-info-item">
               <span>User ID</span>
               <strong>{userId}</strong>
+            </div>
+            <div className="profile-info-item">
+              <span>Bookings</span>
+              <strong>
+                <Link to="/my-bookings" className="profile-inline-link">
+                  View My Bookings
+                </Link>
+              </strong>
             </div>
           </div>
         </section>

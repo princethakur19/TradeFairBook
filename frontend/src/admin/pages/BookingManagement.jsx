@@ -7,9 +7,17 @@ import {
   rejectBooking
 } from "../services/adminBookingService";
 
-const STATUS_OPTIONS = ["ALL", "PENDING", "APPROVED", "REJECTED", "CANCELLED"];
+const STATUS_OPTIONS = ["ALL", "PENDING", "APPROVED", "PAID", "REJECTED", "CANCELLED"];
 
 const getStatusClassName = (status) => String(status || "").toLowerCase();
+const getBookingStatusLabel = (status) => {
+  const normalizedStatus = String(status || "").toUpperCase();
+
+  if (normalizedStatus === "APPROVED") return "Payment Pending";
+  if (normalizedStatus === "PAID") return "Payment Confirmed";
+
+  return normalizedStatus || "N/A";
+};
 
 const formatInr = (value) =>
   new Intl.NumberFormat("en-IN", {
@@ -101,7 +109,7 @@ const BookingManagement = () => {
         <select value={selectedStatus} onChange={onStatusChange}>
           {STATUS_OPTIONS.map((status) => (
             <option key={status} value={status}>
-              {status}
+              {getBookingStatusLabel(status)}
             </option>
           ))}
         </select>
@@ -139,45 +147,54 @@ const BookingManagement = () => {
                 </td>
               </tr>
             ) : bookings.length ? (
-              bookings.map((booking) => (
-                <tr key={booking._id}>
-                  <td className="col-user">{booking.user?.fullname || "N/A"}</td>
-                  <td className="col-email">{booking.user?.email || "N/A"}</td>
-                  <td className="col-dome">{booking.dome?.domeName || "N/A"}</td>
-                  <td className="col-stall">{booking.stall?.stallNumber || "N/A"}</td>
-                  <td className="col-amount">{formatInr(booking.amount)}</td>
-                  <td className="col-status">
-                    <span className={`status-pill booking-status ${getStatusClassName(booking.status)}`}>
-                      {booking.status}
-                    </span>
-                  </td>
-                  <td className="col-action">
-                    <div className="action-buttons booking-action-buttons">
-                      <button
-                        className="edit-icon-btn save-btn"
-                        onClick={() => runAction(approveBooking, booking._id)}
-                        disabled={booking.status === "APPROVED"}
-                      >
-                        Approve
-                      </button>
-                      <button
-                        className="edit-icon-btn"
-                        onClick={() => runAction(rejectBooking, booking._id)}
-                        disabled={booking.status === "REJECTED"}
-                      >
-                        Reject
-                      </button>
-                      <button
-                        className="edit-icon-btn delete-btn"
-                        onClick={() => runAction(cancelBooking, booking._id)}
-                        disabled={booking.status === "CANCELLED"}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+              bookings.map((booking) => {
+                const normalizedStatus = String(booking.status || "").toUpperCase();
+                const isPaid = normalizedStatus === "PAID";
+
+                return (
+                  <tr key={booking._id}>
+                    <td className="col-user">{booking.user?.fullname || "N/A"}</td>
+                    <td className="col-email">{booking.user?.email || "N/A"}</td>
+                    <td className="col-dome">{booking.dome?.domeName || "N/A"}</td>
+                    <td className="col-stall">{booking.stall?.stallNumber || "N/A"}</td>
+                    <td className="col-amount">{formatInr(booking.amount)}</td>
+                    <td className="col-status">
+                      <span className={`status-pill booking-status ${getStatusClassName(booking.status)}`}>
+                        {getBookingStatusLabel(booking.status)}
+                      </span>
+                    </td>
+                    <td className="col-action">
+                      {isPaid ? (
+                        <span className="count-badge">Completed</span>
+                      ) : (
+                        <div className="action-buttons booking-action-buttons">
+                          <button
+                            className="edit-icon-btn save-btn"
+                            onClick={() => runAction(approveBooking, booking._id)}
+                            disabled={normalizedStatus === "APPROVED"}
+                          >
+                            Approve
+                          </button>
+                          <button
+                            className="edit-icon-btn"
+                            onClick={() => runAction(rejectBooking, booking._id)}
+                            disabled={normalizedStatus === "REJECTED"}
+                          >
+                            Reject
+                          </button>
+                          <button
+                            className="edit-icon-btn delete-btn"
+                            onClick={() => runAction(cancelBooking, booking._id)}
+                            disabled={normalizedStatus === "CANCELLED"}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
             ) : (
               <tr>
                 <td colSpan="7" className="empty-table-msg">

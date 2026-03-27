@@ -1,7 +1,7 @@
 const Booking = require("../models/Booking");
 const Stall = require("../models/Stall");
 
-const BOOKING_STATUSES = ["PENDING", "APPROVED", "REJECTED", "CANCELLED"];
+const BOOKING_STATUSES = ["PENDING", "APPROVED", "PAID", "REJECTED", "CANCELLED"];
 const ACTIVE_BOOKING_STATUSES = ["PENDING", "APPROVED", "PAID"];
 
 const normalizeStatus = (value) => String(value || "").trim().toUpperCase();
@@ -84,6 +84,13 @@ const updateBookingStatus = async (req, res, status, actionLabel) => {
       return res.status(404).json({
         success: false,
         message: "Booking not found"
+      });
+    }
+
+    if (String(booking.status || "").toUpperCase() === "PAID") {
+      return res.status(400).json({
+        success: false,
+        message: "Paid bookings cannot be modified"
       });
     }
 

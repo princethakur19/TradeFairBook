@@ -8,6 +8,15 @@ const formatInr = (value) =>
     maximumFractionDigits: 0,
   }).format(value || 0);
 
+const getBookingStatusLabel = (status) => {
+  const normalizedStatus = String(status || "").toUpperCase();
+
+  if (normalizedStatus === "APPROVED") return "Payment Pending";
+  if (normalizedStatus === "PAID") return "Payment Confirmed";
+
+  return normalizedStatus || "N/A";
+};
+
 const DomeReport = () => {
   const [domes, setDomes] = useState([]);
   const [selectedDomeId, setSelectedDomeId] = useState("");
@@ -94,6 +103,14 @@ const DomeReport = () => {
           <strong>{report.availableStalls}</strong>
         </div>
         <div className="report-metric-card">
+          <span>Payment Pending</span>
+          <strong>{report.paymentPendingCount || 0}</strong>
+        </div>
+        <div className="report-metric-card">
+          <span>Payment Confirmed</span>
+          <strong>{report.paymentConfirmedCount || 0}</strong>
+        </div>
+        <div className="report-metric-card">
           <span>Total Revenue</span>
           <strong className="metric-revenue">
             {formatInr(report.totalRevenue)}
@@ -108,7 +125,8 @@ const DomeReport = () => {
           onChange={(e) => setStatusFilter(e.target.value)}
         >
           <option value="ALL">All Status</option>
-          <option value="APPROVED">Approved</option>
+          <option value="APPROVED">Payment Pending</option>
+          <option value="PAID">Payment Confirmed</option>
           <option value="PENDING">Pending</option>
           <option value="REJECTED">Rejected</option>
           <option value="CANCELLED">Cancelled</option>
@@ -132,7 +150,7 @@ const DomeReport = () => {
                 <tr key={booking._id}>
                   <td>{booking.user?.fullname || booking.user?.name || "N/A"}</td>
                   <td>{booking.stall?.stallNumber || "N/A"}</td>
-                  <td>{booking.status}</td>
+                  <td>{getBookingStatusLabel(booking.status)}</td>
                   <td>{formatInr(booking.amount)}</td>
                 </tr>
               ))

@@ -55,6 +55,10 @@ const DashboardStats = () => {
               <strong>{stats.approvedBookings || 0}</strong>
             </div>
             <div className="report-metric-card">
+              <span>Paid Bookings</span>
+              <strong>{stats.paidBookings || 0}</strong>
+            </div>
+            <div className="report-metric-card">
               <span>Pending Bookings</span>
               <strong>{stats.pendingBookings || 0}</strong>
             </div>

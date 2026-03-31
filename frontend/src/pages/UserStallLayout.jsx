@@ -16,11 +16,20 @@ import {
 import "../styles/userStallLayout.css";
 
 const STALL_NUMBER_REGEX = /\d+/;
+const MAX_PREVIEW_WIDTH = 880;
+const MIN_STALL_SIZE = 24;
 
 const sortByStallNumber = (a, b) => {
   const aNumber = Number.parseInt(a.stallNumber.match(STALL_NUMBER_REGEX)?.[0] || "0", 10);
   const bNumber = Number.parseInt(b.stallNumber.match(STALL_NUMBER_REGEX)?.[0] || "0", 10);
   return aNumber - bNumber;
+};
+
+const getRequiredPreviewWidth = (topCount, stallSize, topGap, sideGap, spacedCenterGap) => {
+  const topSlots = Math.max(topCount, 1) + 2;
+  const topWidth = topSlots * stallSize + (topSlots - 1) * topGap;
+  const bodyWidth = stallSize * 4 + spacedCenterGap + sideGap * 2;
+  return Math.max(topWidth, bodyWidth);
 };
 
 const StallBox = ({ stall, isSelected, onClick, extraClassName = "" }) => {
@@ -44,6 +53,8 @@ const StallBox = ({ stall, isSelected, onClick, extraClassName = "" }) => {
     </button>
   );
 };
+
+const StallPlaceholder = () => <div className="stall-box placeholder-slot" aria-hidden="true"></div>;
 
 const UserStallLayout = () => {
   const { domeId } = useParams();
@@ -122,6 +133,84 @@ const UserStallLayout = () => {
   }, [stalls]);
 
   const centerSpacingClass = centerSpacing === "with-space" ? "spaced" : "compact";
+
+  const previewLayout = useMemo(() => {
+    const leftColumn = grouped.LEFT.slice(1);
+    const rightColumn = grouped.RIGHT.slice(1);
+    const maxRows = Math.max(grouped.CENTER_LEFT.length, grouped.CENTER_RIGHT.length);
+    const centerPairs = Array.from({ length: maxRows }, (_, index) => ({
+      left: grouped.CENTER_LEFT[index] || null,
+      right: grouped.CENTER_RIGHT[index] || null
+    }));
+
+    return {
+      leftTop: grouped.LEFT[0] || null,
+      rightTop: grouped.RIGHT[0] || null,
+      leftColumn,
+      rightColumn,
+      centerPairs
+    };
+  }, [grouped.CENTER_LEFT, grouped.CENTER_RIGHT, grouped.LEFT, grouped.RIGHT]);
+
+  const previewSizing = useMemo(() => {
+    const topCount = Math.max(grouped.TOP.length, 1);
+
+    let stallSize = 60;
+    let topGap = 16;
+    let sideGap = 40;
+    let spacedCenterGap = 48;
+    let compactCenterGap = 10;
+
+    while (
+      stallSize > MIN_STALL_SIZE
+      && getRequiredPreviewWidth(topCount, stallSize, topGap, sideGap, spacedCenterGap) > MAX_PREVIEW_WIDTH
+    ) {
+      stallSize -= 1;
+
+      if (stallSize <= 52) {
+        topGap = 14;
+        sideGap = 34;
+        spacedCenterGap = 44;
+        compactCenterGap = 10;
+      }
+
+      if (stallSize <= 46) {
+        topGap = 12;
+        sideGap = 28;
+        spacedCenterGap = 38;
+        compactCenterGap = 9;
+      }
+
+      if (stallSize <= 40) {
+        topGap = 10;
+        sideGap = 22;
+        spacedCenterGap = 32;
+        compactCenterGap = 8;
+      }
+
+      if (stallSize <= 34) {
+        topGap = 8;
+        sideGap = 18;
+        spacedCenterGap = 26;
+        compactCenterGap = 7;
+      }
+
+      if (stallSize <= 30) {
+        topGap = 6;
+        sideGap = 14;
+        spacedCenterGap = 22;
+        compactCenterGap = 6;
+      }
+    }
+
+    return {
+      stallSize,
+      topGap,
+      sideGap,
+      spacedCenterGap,
+      compactCenterGap
+    };
+  }, [grouped.TOP.length]);
 
   const counts = useMemo(() => {
     const getBySide = (side) => stalls.filter((stall) => stall.side === side);
@@ -352,20 +441,31 @@ const UserStallLayout = () => {
           <div className="right-panel">
             <h2 className="panel-title">Stall Layout Preview</h2>
 
-            <div className="layout-preview">
-              <div className="preview-left">
-                {grouped.LEFT.map((stall) => (
-                  <StallBox
-                    key={stall._id}
-                    stall={stall}
-                    isSelected={selectedStallIds.has(stall._id)}
-                    onClick={handleStallClick}
-                  />
-                ))}
-              </div>
+            <div
+              className="layout-preview"
+              style={{
+                "--map-stall-size": `${previewSizing.stallSize}px`,
+                "--map-row-gap": `${previewSizing.topGap}px`,
+                "--map-top-gap": `${previewSizing.topGap}px`,
+                "--map-side-gap": `${previewSizing.sideGap}px`,
+                "--map-center-gap-spaced": `${previewSizing.spacedCenterGap}px`,
+                "--map-center-gap-compact": `${previewSizing.compactCenterGap}px`
+              }}
+            >
+              <div className="user-map-structure">
+                <div className="user-map-top-left">
+                  {previewLayout.leftTop ? (
+                    <StallBox
+                      stall={previewLayout.leftTop}
+                      isSelected={selectedStallIds.has(previewLayout.leftTop._id)}
+                      onClick={handleStallClick}
+                    />
+                  ) : (
+                    <StallPlaceholder />
+                  )}
+                </div>
 
-              <div className="preview-center">
-                <div className="preview-top">
+                <div className="user-map-top-center">
                   {grouped.TOP.map((stall) => (
                     <StallBox
                       key={stall._id}
@@ -376,46 +476,69 @@ const UserStallLayout = () => {
                   ))}
                 </div>
 
-                <div className="preview-center-space">
-                  <div className="preview-center-title">
-                    <p>Exhibition Space</p>
-                  </div>
-                  <div className={`preview-center-stalls ${centerSpacingClass}`}>
-                    <div className="preview-center-lane">
-                      {grouped.CENTER_LEFT.map((stall) => (
-                        <StallBox
-                          key={stall._id}
-                          stall={stall}
-                          isSelected={selectedStallIds.has(stall._id)}
-                          onClick={handleStallClick}
-                          extraClassName={`center-stall ${centerSpacingClass}`}
-                        />
-                      ))}
-                    </div>
-                    <div className="preview-center-lane">
-                      {grouped.CENTER_RIGHT.map((stall) => (
-                        <StallBox
-                          key={stall._id}
-                          stall={stall}
-                          isSelected={selectedStallIds.has(stall._id)}
-                          onClick={handleStallClick}
-                          extraClassName={`center-stall ${centerSpacingClass}`}
-                        />
-                      ))}
-                    </div>
+                <div className="user-map-top-right">
+                  {previewLayout.rightTop ? (
+                    <StallBox
+                      stall={previewLayout.rightTop}
+                      isSelected={selectedStallIds.has(previewLayout.rightTop._id)}
+                      onClick={handleStallClick}
+                    />
+                  ) : (
+                    <StallPlaceholder />
+                  )}
+                </div>
+
+                <div className="user-left-column">
+                  {previewLayout.leftColumn.map((stall) => (
+                    <StallBox
+                      key={stall._id}
+                      stall={stall}
+                      isSelected={selectedStallIds.has(stall._id)}
+                      onClick={handleStallClick}
+                    />
+                  ))}
+                </div>
+
+                <div className="user-center-grid-shell">
+                  <div className={`user-center-grid ${centerSpacingClass}`}>
+                    {previewLayout.centerPairs.map((pair, index) => (
+                      <React.Fragment key={pair.left?._id || pair.right?._id || `center-row-${index}`}>
+                        {pair.left ? (
+                          <StallBox
+                            stall={pair.left}
+                            isSelected={selectedStallIds.has(pair.left._id)}
+                            onClick={handleStallClick}
+                            extraClassName="center-stall"
+                          />
+                        ) : (
+                          <StallPlaceholder />
+                        )}
+
+                        {pair.right ? (
+                          <StallBox
+                            stall={pair.right}
+                            isSelected={selectedStallIds.has(pair.right._id)}
+                            onClick={handleStallClick}
+                            extraClassName="center-stall"
+                          />
+                        ) : (
+                          <StallPlaceholder />
+                        )}
+                      </React.Fragment>
+                    ))}
                   </div>
                 </div>
-              </div>
 
-              <div className="preview-right">
-                {grouped.RIGHT.map((stall) => (
-                  <StallBox
-                    key={stall._id}
-                    stall={stall}
-                    isSelected={selectedStallIds.has(stall._id)}
-                    onClick={handleStallClick}
-                  />
-                ))}
+                <div className="user-right-column">
+                  {previewLayout.rightColumn.map((stall) => (
+                    <StallBox
+                      key={stall._id}
+                      stall={stall}
+                      isSelected={selectedStallIds.has(stall._id)}
+                      onClick={handleStallClick}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
 

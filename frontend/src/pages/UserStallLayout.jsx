@@ -55,7 +55,7 @@ const StallBox = ({ stall, isSelected, onClick, extraClassName = "" }) => {
 };
 
 const StallPlaceholder = () => <div className="stall-box placeholder-slot" aria-hidden="true"></div>;
-
+//for Stall view page
 const UserStallLayout = () => {
   const { domeId } = useParams();
   const navigate = useNavigate();

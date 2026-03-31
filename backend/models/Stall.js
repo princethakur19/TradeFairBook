@@ -29,6 +29,12 @@ const stallSchema = new mongoose.Schema({
     type: String,
     enum: ["AVAILABLE", "BOOKED", "HOLD", "BLOCKED"],
     default: "AVAILABLE"
+  },
+
+  centerSpacing: {
+    type: String,
+    enum: ["with-space", "no-space"],
+    default: "with-space"
   }
 
 }, { timestamps: true });

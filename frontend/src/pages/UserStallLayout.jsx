@@ -23,6 +23,28 @@ const sortByStallNumber = (a, b) => {
   return aNumber - bNumber;
 };
 
+const StallBox = ({ stall, isSelected, onClick, extraClassName = "" }) => {
+  const className = [
+    "stall-box",
+    stall.status.toLowerCase(),
+    isSelected ? "selected" : "",
+    extraClassName
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <button
+      type="button"
+      className={className}
+      onClick={() => onClick(stall)}
+      title={`${stall.stallNumber} - INR ${stall.price} - ${stall.status}`}
+    >
+      <span>{stall.stallNumber}</span>
+    </button>
+  );
+};
+
 const UserStallLayout = () => {
   const { domeId } = useParams();
   const navigate = useNavigate();
@@ -93,6 +115,13 @@ const UserStallLayout = () => {
       CENTER_RIGHT: center.filter((_, index) => index % 2 !== 0)
     };
   }, [stalls]);
+
+  const centerSpacing = useMemo(() => {
+    const centerStall = stalls.find((stall) => stall.side === "CENTER");
+    return centerStall?.centerSpacing === "no-space" ? "no-space" : "with-space";
+  }, [stalls]);
+
+  const centerSpacingClass = centerSpacing === "with-space" ? "spaced" : "compact";
 
   const counts = useMemo(() => {
     const getBySide = (side) => stalls.filter((stall) => stall.side === side);
@@ -326,30 +355,24 @@ const UserStallLayout = () => {
             <div className="layout-preview">
               <div className="preview-left">
                 {grouped.LEFT.map((stall) => (
-                  <button
+                  <StallBox
                     key={stall._id}
-                    type="button"
-                    className={`stall-box ${stall.status.toLowerCase()} ${selectedStallIds.has(stall._id) ? "selected" : ""}`}
-                    onClick={() => handleStallClick(stall)}
-                    title={`${stall.stallNumber} - INR ${stall.price} - ${stall.status}`}
-                  >
-                    <span>{stall.stallNumber}</span>
-                  </button>
+                    stall={stall}
+                    isSelected={selectedStallIds.has(stall._id)}
+                    onClick={handleStallClick}
+                  />
                 ))}
               </div>
 
               <div className="preview-center">
                 <div className="preview-top">
                   {grouped.TOP.map((stall) => (
-                    <button
+                    <StallBox
                       key={stall._id}
-                      type="button"
-                      className={`stall-box ${stall.status.toLowerCase()} ${selectedStallIds.has(stall._id) ? "selected" : ""}`}
-                      onClick={() => handleStallClick(stall)}
-                      title={`${stall.stallNumber} - INR ${stall.price} - ${stall.status}`}
-                    >
-                      <span>{stall.stallNumber}</span>
-                    </button>
+                      stall={stall}
+                      isSelected={selectedStallIds.has(stall._id)}
+                      onClick={handleStallClick}
+                    />
                   ))}
                 </div>
 
@@ -357,31 +380,27 @@ const UserStallLayout = () => {
                   <div className="preview-center-title">
                     <p>Exhibition Space</p>
                   </div>
-                  <div className="preview-center-stalls">
+                  <div className={`preview-center-stalls ${centerSpacingClass}`}>
                     <div className="preview-center-lane">
                       {grouped.CENTER_LEFT.map((stall) => (
-                        <button
+                        <StallBox
                           key={stall._id}
-                          type="button"
-                          className={`stall-box center-stall ${stall.status.toLowerCase()} ${selectedStallIds.has(stall._id) ? "selected" : ""}`}
-                          onClick={() => handleStallClick(stall)}
-                          title={`${stall.stallNumber} - INR ${stall.price} - ${stall.status}`}
-                        >
-                          <span>{stall.stallNumber}</span>
-                        </button>
+                          stall={stall}
+                          isSelected={selectedStallIds.has(stall._id)}
+                          onClick={handleStallClick}
+                          extraClassName={`center-stall ${centerSpacingClass}`}
+                        />
                       ))}
                     </div>
                     <div className="preview-center-lane">
                       {grouped.CENTER_RIGHT.map((stall) => (
-                        <button
+                        <StallBox
                           key={stall._id}
-                          type="button"
-                          className={`stall-box center-stall ${stall.status.toLowerCase()} ${selectedStallIds.has(stall._id) ? "selected" : ""}`}
-                          onClick={() => handleStallClick(stall)}
-                          title={`${stall.stallNumber} - INR ${stall.price} - ${stall.status}`}
-                        >
-                          <span>{stall.stallNumber}</span>
-                        </button>
+                          stall={stall}
+                          isSelected={selectedStallIds.has(stall._id)}
+                          onClick={handleStallClick}
+                          extraClassName={`center-stall ${centerSpacingClass}`}
+                        />
                       ))}
                     </div>
                   </div>
@@ -390,15 +409,12 @@ const UserStallLayout = () => {
 
               <div className="preview-right">
                 {grouped.RIGHT.map((stall) => (
-                  <button
+                  <StallBox
                     key={stall._id}
-                    type="button"
-                    className={`stall-box ${stall.status.toLowerCase()} ${selectedStallIds.has(stall._id) ? "selected" : ""}`}
-                    onClick={() => handleStallClick(stall)}
-                    title={`${stall.stallNumber} - INR ${stall.price} - ${stall.status}`}
-                  >
-                    <span>{stall.stallNumber}</span>
-                  </button>
+                    stall={stall}
+                    isSelected={selectedStallIds.has(stall._id)}
+                    onClick={handleStallClick}
+                  />
                 ))}
               </div>
             </div>

@@ -16,16 +16,31 @@ const INITIAL_CONFIG = {
   right: 7,
 };
 
+const MAX_PREVIEW_WIDTH = 880;
+const MIN_STALL_SIZE = 24;
+
 const parseCount = (value, fallback, min) => {
   const parsed = Number.parseInt(value, 10);
   if (Number.isNaN(parsed)) return fallback;
   return Math.max(min, parsed);
 };
 
+const getRequiredPreviewWidth = (topCount, stallSize, topGap, sideGap, spacedCenterGap) => {
+  const topSlots = Math.max(topCount, 1) + 2;
+  const topWidth = topSlots * stallSize + (topSlots - 1) * topGap;
+  const bodyWidth = stallSize * 4 + spacedCenterGap + sideGap * 2;
+  return Math.max(topWidth, bodyWidth);
+};
+
+const PreviewStallBox = ({ label, variant }) => (
+  <div className={`stall-box ${variant}-stall`}>{label}</div>
+);
+
 const StallLayout = ({ setStallsData }) => {
   const [domes, setDomes] = useState([]);
   const [selectedDome, setSelectedDome] = useState("");
   const [config, setConfig] = useState(INITIAL_CONFIG);
+  const [centerSpacing, setCenterSpacing] = useState("with-space");
   const [isLoadingDomes, setIsLoadingDomes] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -83,6 +98,66 @@ const StallLayout = ({ setStallsData }) => {
     };
   }, [config.center, config.left, config.right, config.top]);
 
+  const previewSizing = useMemo(() => {
+    const topCount = Math.max(config.top, 1);
+
+    let stallSize = 60;
+    let topGap = 16;
+    let sideGap = 40;
+    let spacedCenterGap = 48;
+    let compactCenterGap = 10;
+
+    while (
+      stallSize > MIN_STALL_SIZE
+      && getRequiredPreviewWidth(topCount, stallSize, topGap, sideGap, spacedCenterGap) > MAX_PREVIEW_WIDTH
+    ) {
+      stallSize -= 1;
+
+      if (stallSize <= 52) {
+        topGap = 14;
+        sideGap = 34;
+        spacedCenterGap = 44;
+        compactCenterGap = 10;
+      }
+
+      if (stallSize <= 46) {
+        topGap = 12;
+        sideGap = 28;
+        spacedCenterGap = 38;
+        compactCenterGap = 9;
+      }
+
+      if (stallSize <= 40) {
+        topGap = 10;
+        sideGap = 22;
+        spacedCenterGap = 32;
+        compactCenterGap = 8;
+      }
+
+      if (stallSize <= 34) {
+        topGap = 8;
+        sideGap = 18;
+        spacedCenterGap = 26;
+        compactCenterGap = 7;
+      }
+
+      if (stallSize <= 30) {
+        topGap = 6;
+        sideGap = 14;
+        spacedCenterGap = 22;
+        compactCenterGap = 6;
+      }
+    }
+
+    return {
+      stallSize,
+      topGap,
+      sideGap,
+      spacedCenterGap,
+      compactCenterGap,
+    };
+  }, [config.top]);
+
   const handleGenerate = useCallback(async () => {
     setErrorMessage("");
     setSuccessMessage("");
@@ -98,6 +173,7 @@ const StallLayout = ({ setStallsData }) => {
       leftCount: config.left,
       rightCount: config.right,
       domeId: selectedDome,
+      centerSpacing,
     });
 
     if (!stalls.length) {
@@ -119,7 +195,7 @@ const StallLayout = ({ setStallsData }) => {
     } finally {
       setIsSaving(false);
     }
-  }, [config.center, config.left, config.right, config.top, selectedDome, setStallsData]);
+  }, [centerSpacing, config.center, config.left, config.right, config.top, selectedDome, setStallsData]);
 
   return (
     <div className="layout-fluid-wrapper">
@@ -186,6 +262,19 @@ const StallLayout = ({ setStallsData }) => {
               disabled={isSaving}
             />
           </div>
+
+          <div className="input-group center-spacing-field">
+            <label>Center Stall Spacing</label>
+            <select
+              className="spacing-select"
+              value={centerSpacing}
+              onChange={(e) => setCenterSpacing(e.target.value)}
+              disabled={isSaving}
+            >
+              <option value="with-space">With Space</option>
+              <option value="no-space">No Space</option>
+            </select>
+          </div>
         </div>
 
         {errorMessage ? <p className="manage-feedback manage-feedback-error">{errorMessage}</p> : null}
@@ -206,48 +295,49 @@ const StallLayout = ({ setStallsData }) => {
         <div
           className="visual-map-container"
           style={{
-            "--stall-size": "60px",
-            "--stall-gap": "16px",
+            "--stall-size": `${previewSizing.stallSize}px`,
+            "--stall-gap": `${previewSizing.topGap}px`,
+            "--map-top-gap": `${previewSizing.topGap}px`,
+            "--map-side-gap": `${previewSizing.sideGap}px`,
+            "--center-gap-spaced": `${previewSizing.spacedCenterGap}px`,
+            "--center-gap-compact": `${previewSizing.compactCenterGap}px`,
           }}
         >
-          <div
-            className="map-row"
-            style={{
-              gridTemplateColumns: `var(--stall-size) repeat(${Math.max(config.top, 1)}, var(--stall-size)) var(--stall-size)`,
-            }}
-          >
-            <div className="stall-box left-stall">{preview.left[0]}</div>
-            {preview.top.map((stallNumber) => (
-              <div key={stallNumber} className="stall-box top-stall">
-                {stallNumber}
-              </div>
-            ))}
-            <div className="stall-box right-stall">{preview.right[0]}</div>
-          </div>
+          <div className="map-structure">
+            <div className="map-top-left">
+              <PreviewStallBox label={preview.left[0]} variant="left" />
+            </div>
 
-          <div className="map-body">
-            <div className="side-column">
+            <div className="map-top-center">
+              {preview.top.map((stallNumber) => (
+                <PreviewStallBox key={stallNumber} label={stallNumber} variant="top" />
+              ))}
+            </div>
+
+            <div className="map-top-right">
+              <PreviewStallBox label={preview.right[0]} variant="right" />
+            </div>
+
+            <div className="left-column">
               {preview.left.slice(1).map((stallNumber) => (
-                <div key={stallNumber} className="stall-box left-stall">
-                  {stallNumber}
-                </div>
+                <PreviewStallBox key={stallNumber} label={stallNumber} variant="left" />
               ))}
             </div>
 
-            <div className="center-column-pair">
-              {preview.center.map((pair) => (
-                <React.Fragment key={pair.left}>
-                  <div className="stall-box center-stall">{pair.left}</div>
-                  <div className="stall-box center-stall">{pair.right}</div>
-                </React.Fragment>
-              ))}
+            <div className="center-grid-shell">
+              <div className={`center-grid ${centerSpacing === "with-space" ? "spaced" : "compact"}`}>
+                {preview.center.map((pair) => (
+                  <React.Fragment key={pair.left}>
+                    <PreviewStallBox label={pair.left} variant="center" />
+                    <PreviewStallBox label={pair.right} variant="center" />
+                  </React.Fragment>
+                ))}
+              </div>
             </div>
 
-            <div className="side-column">
+            <div className="right-column">
               {preview.right.slice(1).map((stallNumber) => (
-                <div key={stallNumber} className="stall-box right-stall">
-                  {stallNumber}
-                </div>
+                <PreviewStallBox key={stallNumber} label={stallNumber} variant="right" />
               ))}
             </div>
           </div>

@@ -356,13 +356,28 @@
 .user-layout-wrapper .preview-center-stalls {
   display: grid;
   grid-template-columns: repeat(2, 56px);
-  gap: 10px 18px;
+}
+
+.user-layout-wrapper .preview-center-stalls.spaced {
+  gap: 12px 24px;
+}
+
+.user-layout-wrapper .preview-center-stalls.compact {
+  gap: 6px 10px;
 }
 
 .user-layout-wrapper .preview-center-lane {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.user-layout-wrapper .preview-center-stalls.spaced .preview-center-lane {
+  gap: 10px;
+}
+
+.user-layout-wrapper .preview-center-stalls.compact .preview-center-lane {
+  gap: 4px;
 }
 
 .stall-box {
@@ -722,7 +737,14 @@
 
   .user-layout-wrapper .preview-center-stalls {
     grid-template-columns: repeat(2, 48px);
-    gap: 8px 12px;
+  }
+
+  .user-layout-wrapper .preview-center-stalls.spaced {
+    gap: 8px 16px;
+  }
+
+  .user-layout-wrapper .preview-center-stalls.compact {
+    gap: 4px 8px;
   }
 }
 
@@ -752,7 +774,14 @@
 
   .user-layout-wrapper .preview-center-stalls {
     grid-template-columns: repeat(2, 40px);
-    gap: 6px 10px;
+  }
+
+  .user-layout-wrapper .preview-center-stalls.spaced {
+    gap: 6px 12px;
+  }
+
+  .user-layout-wrapper .preview-center-stalls.compact {
+    gap: 3px 6px;
   }
 
   .modal-content {

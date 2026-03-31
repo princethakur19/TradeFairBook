@@ -4,7 +4,14 @@ import api from "../../api/axios";
    Generate stall array (C-shape stylee)
 ====================================================== */
 export const generateStallArray = (config) => {
-  const { topCount, centerCount, leftCount, rightCount, domeId } = config;
+  const {
+    topCount,
+    centerCount,
+    leftCount,
+    rightCount,
+    domeId,
+    centerSpacing = "with-space"
+  } = config;
 
   if (!domeId) {
     alert("Please select a dome first.");
@@ -21,6 +28,7 @@ export const generateStallArray = (config) => {
       price: 7000,
       status: "AVAILABLE",
       dome: domeId,
+      centerSpacing,
     });
   }
 
@@ -32,6 +40,7 @@ export const generateStallArray = (config) => {
       price: 5000,
       status: "AVAILABLE",
       dome: domeId,
+      centerSpacing,
     });
   }
 
@@ -43,6 +52,7 @@ export const generateStallArray = (config) => {
       price: 5000,
       status: "AVAILABLE",
       dome: domeId,
+      centerSpacing,
     });
   }
 
@@ -57,6 +67,7 @@ export const generateStallArray = (config) => {
       price: 6000,
       status: "AVAILABLE",
       dome: domeId,
+      centerSpacing,
     });
   }
 

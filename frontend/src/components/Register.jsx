@@ -152,7 +152,7 @@ const Register = () => {
 
         <p style={{ marginTop: "15px", textAlign: "center", color: "#0f172a" }}>
           Already registered?{" "}
-          <Link className="link" to="/">
+          <Link className="link" to="/login">
             Login
           </Link>
         </p>

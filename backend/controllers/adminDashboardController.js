@@ -74,6 +74,7 @@ exports.getDashboardStats = async (_req, res) => {
         pendingBookings: statusCountMap.PENDING || 0,
         approvedBookings: statusCountMap.APPROVED || 0,
         paidBookings: statusCountMap.PAID || 0,
+        refundedBookings: statusCountMap.REFUNDED || 0,
         rejectedBookings: statusCountMap.REJECTED || 0,
         totalRevenue: revenueAgg[0]?.totalRevenue || 0,
         revenueByDome

@@ -76,8 +76,62 @@ const bookingSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["PENDING", "APPROVED", "PAID", "REJECTED", "CANCELLED"],
+    enum: ["PENDING", "APPROVED", "PAID", "REJECTED", "CANCELLED", "REFUNDED"],
     default: "PENDING"
+  },
+  refundStatus: {
+    type: String,
+    enum: ["NONE", "REQUESTED", "REJECTED", "REFUNDED"],
+    default: "NONE"
+  },
+  refundPercent: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 100
+  },
+  refundDeductionAmount: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  refundAmount: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  refundReason: {
+    type: String,
+    trim: true,
+    default: ""
+  },
+  refundAdminNote: {
+    type: String,
+    trim: true,
+    default: ""
+  },
+  refundRequestedAt: {
+    type: Date,
+    default: null
+  },
+  refundProcessedAt: {
+    type: Date,
+    default: null
+  },
+  refundReferenceId: {
+    type: String,
+    trim: true,
+    default: ""
+  },
+  refundRequestedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    default: null
+  },
+  refundProcessedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    default: null
   },
   paymentOrderId: {
     type: String,

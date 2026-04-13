@@ -6,6 +6,7 @@ import {
   cancelUserBooking,
   createBookingPaymentOrder,
   getUserBookings,
+  requestBookingRefund,
   verifyBookingPayment
 } from "../services/bookingService";
 import { getLoggedInUserId } from "../utils/auth";
@@ -13,11 +14,20 @@ import "../styles/layout.css";
 import "../styles/myBookings.css";
 
 const getStatusClassName = (status) => String(status || "").toLowerCase();
-const getBookingStatusLabel = (status) => {
-  const normalizedStatus = String(status || "").toUpperCase();
+const getRefundStatus = (refundStatus) => String(refundStatus || "NONE").toUpperCase();
+const hasCompletedPayment = (booking) =>
+  Boolean(booking?.paidAt || booking?.paymentId);
+const getBookingStatusLabel = (booking) => {
+  const normalizedStatus = String(booking?.status || "").toUpperCase();
+  const refundStatus = getRefundStatus(booking?.refundStatus);
+  const paymentCompleted = hasCompletedPayment(booking) || normalizedStatus === "PAID";
+
+  if (refundStatus === "REQUESTED") return "Refund Requested";
+  if (normalizedStatus === "REFUNDED" || refundStatus === "REFUNDED") return "Refunded";
 
   if (normalizedStatus === "APPROVED") return "Payment Pending";
   if (normalizedStatus === "PAID") return "Payment Confirmed";
+  if (normalizedStatus === "CANCELLED" && paymentCompleted) return "Cancelled";
 
   return normalizedStatus || "PENDING";
 };
@@ -69,15 +79,33 @@ const loadRazorpayCheckout = () =>
     document.body.appendChild(script);
   });
 
-const getBookingStageNote = (status) => {
-  const normalizedStatus = String(status || "").toUpperCase();
+const getBookingStageNote = (booking) => {
+  const normalizedStatus = String(booking?.status || "").toUpperCase();
+  const refundStatus = getRefundStatus(booking?.refundStatus);
+  const paymentCompleted = hasCompletedPayment(booking) || normalizedStatus === "PAID";
 
   if (normalizedStatus === "APPROVED") {
     return "Payment is pending. This booking is approved and ready for payment.";
   }
 
+  if (normalizedStatus === "REFUNDED") {
+    return "Refund processed successfully. The refunded amount will be settled by admin.";
+  }
+
   if (normalizedStatus === "REJECTED") {
     return "This booking was rejected by admin. Payment is not available.";
+  }
+
+  if (normalizedStatus === "CANCELLED" && paymentCompleted && refundStatus === "REQUESTED") {
+    return "Refund request is pending admin review.";
+  }
+
+  if (normalizedStatus === "CANCELLED" && paymentCompleted && refundStatus === "REJECTED") {
+    return "Refund request was rejected. You can contact admin or request again with details.";
+  }
+
+  if (normalizedStatus === "CANCELLED" && paymentCompleted) {
+    return "Booking cancelled. You can request refund now.";
   }
 
   if (normalizedStatus === "CANCELLED") {
@@ -99,6 +127,7 @@ const MyBookings = () => {
   const [message, setMessage] = useState("");
   const [activeCancelId, setActiveCancelId] = useState("");
   const [activePayId, setActivePayId] = useState("");
+  const [activeRefundId, setActiveRefundId] = useState("");
   const successMessageFromRoute = useMemo(
     () => location.state?.message || "",
     [location.state]
@@ -142,13 +171,42 @@ const MyBookings = () => {
       setActiveCancelId(bookingId);
       setError("");
       setMessage("");
-      await cancelUserBooking(bookingId);
-      setMessage("Booking cancelled successfully.");
+      const response = await cancelUserBooking(bookingId);
+      setMessage(response?.message || "Booking cancelled successfully.");
       await loadBookings();
     } catch (cancelError) {
       setError(cancelError.response?.data?.message || "Failed to cancel booking.");
     } finally {
       setActiveCancelId("");
+    }
+  };
+
+  const handleRequestRefund = async (booking) => {
+    const refundReason = window.prompt(
+      "Enter refund reason (required). Example: Event schedule change."
+    );
+
+    if (refundReason === null) {
+      return;
+    }
+
+    const normalizedReason = String(refundReason || "").trim();
+    if (!normalizedReason) {
+      setError("Refund reason is required.");
+      return;
+    }
+
+    try {
+      setActiveRefundId(booking._id);
+      setError("");
+      setMessage("");
+      const response = await requestBookingRefund(booking._id, normalizedReason);
+      setMessage(response?.message || "Refund request submitted successfully.");
+      await loadBookings();
+    } catch (refundError) {
+      setError(refundError.response?.data?.message || "Unable to request refund right now.");
+    } finally {
+      setActiveRefundId("");
     }
   };
 
@@ -251,8 +309,14 @@ const MyBookings = () => {
             <div className="bookings-grid">
               {bookings.map((booking) => {
                 const normalizedStatus = String(booking.status || "").toUpperCase();
-                const isTerminal = ["CANCELLED", "REJECTED"].includes(normalizedStatus);
+                const refundStatus = getRefundStatus(booking.refundStatus);
+                const paymentCompleted = hasCompletedPayment(booking) || normalizedStatus === "PAID";
+                const isTerminal = ["CANCELLED", "REJECTED", "REFUNDED"].includes(normalizedStatus);
                 const canPayNow = normalizedStatus === "APPROVED";
+                const canRequestRefund =
+                  normalizedStatus === "CANCELLED"
+                  && paymentCompleted
+                  && !["REQUESTED", "REFUNDED"].includes(refundStatus);
 
                 return (
                   <article className="booking-card" key={booking._id}>
@@ -262,7 +326,7 @@ const MyBookings = () => {
                         <p>{booking.dome?.location || "Location unavailable"}</p>
                       </div>
                       <span className={`booking-status-pill ${getStatusClassName(booking.status)}`}>
-                        {getBookingStatusLabel(booking.status)}
+                        {getBookingStatusLabel(booking)}
                       </span>
                     </div>
 
@@ -298,10 +362,31 @@ const MyBookings = () => {
                         <span>Extra Material Cost</span>
                         <strong>{formatInr(booking.extraMaterialShare || booking.extraMaterialTotal || 0)}</strong>
                       </div>
+                      <div>
+                        <span>Refund Status</span>
+                        <strong>{refundStatus}</strong>
+                      </div>
+                      {(normalizedStatus === "REFUNDED" || refundStatus === "REQUESTED") ? (
+                        <div>
+                          <span>Refund Amount</span>
+                          <strong>{formatInr(booking.refundAmount || 0)}</strong>
+                        </div>
+                      ) : null}
+                      {(normalizedStatus === "REFUNDED" || refundStatus === "REQUESTED") ? (
+                        <div>
+                          <span>Deduction</span>
+                          <strong>
+                            {formatInr(booking.refundDeductionAmount || 0)}
+                            {Number(booking.refundPercent || 0)
+                              ? ` (${booking.refundPercent}%)`
+                              : ""}
+                          </strong>
+                        </div>
+                      ) : null}
                     </div>
 
                     <div className={`booking-stage-note ${getStatusClassName(booking.status)}`}>
-                      {getBookingStageNote(booking.status)}
+                      {getBookingStageNote(booking)}
                     </div>
 
                     <div className="booking-card-actions">
@@ -316,11 +401,22 @@ const MyBookings = () => {
                         </button>
                       ) : null}
 
+                      {canRequestRefund ? (
+                        <button
+                          type="button"
+                          className="btn-primary booking-action-btn"
+                          onClick={() => handleRequestRefund(booking)}
+                          disabled={activeRefundId === booking._id}
+                        >
+                          {activeRefundId === booking._id ? "Submitting..." : "Request Refund"}
+                        </button>
+                      ) : null}
+
                       <button
                         type="button"
                         className="btn-secondary booking-action-btn"
                         onClick={() => handleCancelBooking(booking._id)}
-                        disabled={isTerminal || activeCancelId === booking._id || normalizedStatus === "PAID"}
+                        disabled={isTerminal || activeCancelId === booking._id}
                       >
                         {activeCancelId === booking._id ? "Cancelling..." : "Cancel Booking"}
                       </button>

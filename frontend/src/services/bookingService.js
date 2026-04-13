@@ -19,3 +19,8 @@ export const verifyBookingPayment = async (bookingId, paymentPayload) => {
   const response = await api.post(`/bookings/${bookingId}/payment/verify`, paymentPayload);
   return response.data;
 };
+
+export const requestBookingRefund = async (bookingId, reason) => {
+  const response = await api.post(`/bookings/${bookingId}/refund/request`, { reason });
+  return response.data;
+};

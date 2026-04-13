@@ -9,6 +9,10 @@ const {
   cancelBookingByAdmin,
   getBookingAadhaarDetails
 } = require("../controllers/adminBookingController");
+const {
+  approveRefundRequest,
+  rejectRefundRequest
+} = require("../controllers/bookingController");
 const { getDashboardStats } = require("../controllers/adminDashboardController");
 
 router.use(protect);
@@ -19,6 +23,8 @@ router.get("/bookings", getAdminBookings);
 router.put("/bookings/:id/approve", approveBooking);
 router.put("/bookings/:id/reject", rejectBooking);
 router.put("/bookings/:id/cancel", cancelBookingByAdmin);
+router.put("/bookings/:id/refund/approve", approveRefundRequest);
+router.put("/bookings/:id/refund/reject", rejectRefundRequest);
 router.get(
   "/bookings/:id/aadhaar",
   authorizeRoles("SUPER_ADMIN"),

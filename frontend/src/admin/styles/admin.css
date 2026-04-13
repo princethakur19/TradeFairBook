@@ -1089,32 +1089,36 @@ html, body, #root {
 }
 
 .booking-admin-table .col-user {
-    width: 12%;
+    width: 11%;
     font-weight: 700;
 }
 
 .booking-admin-table .col-email {
-    width: 24%;
+    width: 20%;
     white-space: normal;
     word-break: break-word;
 }
 
 .booking-admin-table .col-dome {
-    width: 16%;
+    width: 14%;
     line-height: 1.35;
 }
 
 .booking-admin-table .col-stall {
-    width: 8%;
+    width: 7%;
 }
 
 .booking-admin-table .col-amount {
-    width: 12%;
+    width: 11%;
     font-weight: 700;
 }
 
 .booking-admin-table .col-status {
-    width: 12%;
+    width: 11%;
+}
+
+.booking-admin-table .col-refund {
+    width: 10%;
 }
 
 .booking-admin-table .col-action {
@@ -1155,6 +1159,12 @@ html, body, #root {
     border-color: rgba(20, 222, 103, 0.35);
 }
 
+.booking-status.paid {
+    color: #76b7ff;
+    background: rgba(118, 183, 255, 0.14);
+    border-color: rgba(118, 183, 255, 0.3);
+}
+
 .booking-status.rejected {
     color: #ff6b6b;
     background: rgba(255, 107, 107, 0.12);
@@ -1165,6 +1175,12 @@ html, body, #root {
     color: #b8bfcc;
     background: rgba(184, 191, 204, 0.12);
     border-color: rgba(184, 191, 204, 0.3);
+}
+
+.booking-status.refunded {
+    color: #88f0b0;
+    background: rgba(136, 240, 176, 0.14);
+    border-color: rgba(136, 240, 176, 0.34);
 }
 
 .modal-backdrop {

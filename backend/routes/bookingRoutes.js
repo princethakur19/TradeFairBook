@@ -7,7 +7,8 @@ const {
   updateBookingStatus,
   cancelBooking,
   createPaymentOrder,
-  verifyPayment
+  verifyPayment,
+  requestBookingRefund
 } = require("../controllers/bookingController");
 
 const { protect, adminOnly } = require("../middleware/authMiddleware");
@@ -18,6 +19,7 @@ router.post("/", protect, createBooking);
 router.get("/user/:userId", protect, getUserBookings);
 router.post("/:id/payment/order", protect, createPaymentOrder);
 router.post("/:id/payment/verify", protect, verifyPayment);
+router.post("/:id/refund/request", protect, requestBookingRefund);
 router.delete("/:id", protect, cancelBooking);
 
 // ADMIN ROUTES

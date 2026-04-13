@@ -2,17 +2,29 @@ import React, { useCallback, useEffect, useState } from "react";
 import api from "../../api/axios";
 import {
   approveBooking,
+  approveRefundRequest,
   cancelBooking,
   getAdminBookings,
-  rejectBooking
+  rejectBooking,
+  rejectRefundRequest
 } from "../services/adminBookingService";
 
-const STATUS_OPTIONS = ["ALL", "PENDING", "APPROVED", "PAID", "REJECTED", "CANCELLED"];
+const STATUS_OPTIONS = ["ALL", "PENDING", "APPROVED", "PAID", "REJECTED", "CANCELLED", "REFUNDED"];
 
 const getStatusClassName = (status) => String(status || "").toLowerCase();
-const getBookingStatusLabel = (status) => {
-  const normalizedStatus = String(status || "").toUpperCase();
+const getRefundStatus = (refundStatus) => String(refundStatus || "NONE").toUpperCase();
+const hasCompletedPayment = (booking) =>
+  Boolean(booking?.paidAt || booking?.paymentId);
+const getBookingStatusLabel = (bookingOrStatus) => {
+  const normalizedStatus = String(
+    typeof bookingOrStatus === "string" ? bookingOrStatus : bookingOrStatus?.status || ""
+  ).toUpperCase();
+  const refundStatus = getRefundStatus(
+    typeof bookingOrStatus === "string" ? "NONE" : bookingOrStatus?.refundStatus
+  );
 
+  if (refundStatus === "REQUESTED") return "Refund Requested";
+  if (normalizedStatus === "REFUNDED" || refundStatus === "REFUNDED") return "Refunded";
   if (normalizedStatus === "APPROVED") return "Payment Pending";
   if (normalizedStatus === "PAID") return "Payment Confirmed";
 
@@ -80,8 +92,8 @@ const BookingManagement = () => {
     try {
       setMessage("");
       setError("");
-      await action(bookingId);
-      setMessage("Booking updated successfully.");
+      const response = await action(bookingId);
+      setMessage(response?.message || "Booking updated successfully.");
       fetchBookings();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to update booking status.");
@@ -136,20 +148,25 @@ const BookingManagement = () => {
               <th className="col-stall">STALL</th>
               <th className="col-amount">AMOUNT</th>
               <th className="col-status">STATUS</th>
+              <th className="col-refund">REFUND</th>
               <th className="col-action">ACTION</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="7" className="empty-table-msg">
+                <td colSpan="8" className="empty-table-msg">
                   Loading bookings...
                 </td>
               </tr>
             ) : bookings.length ? (
               bookings.map((booking) => {
                 const normalizedStatus = String(booking.status || "").toUpperCase();
+                const refundStatus = getRefundStatus(booking.refundStatus);
+                const paymentCompleted = hasCompletedPayment(booking) || normalizedStatus === "PAID";
                 const isPaid = normalizedStatus === "PAID";
+                const isRefundRequested = refundStatus === "REQUESTED";
+                const isRefunded = normalizedStatus === "REFUNDED";
 
                 return (
                   <tr key={booking._id}>
@@ -157,15 +174,49 @@ const BookingManagement = () => {
                     <td className="col-email">{booking.user?.email || "N/A"}</td>
                     <td className="col-dome">{booking.dome?.domeName || "N/A"}</td>
                     <td className="col-stall">{booking.stall?.stallNumber || "N/A"}</td>
-                    <td className="col-amount">{formatInr(booking.amount)}</td>
+                    <td className="col-amount">{formatInr(booking.grandTotal || booking.amount)}</td>
                     <td className="col-status">
                       <span className={`status-pill booking-status ${getStatusClassName(booking.status)}`}>
-                        {getBookingStatusLabel(booking.status)}
+                        {getBookingStatusLabel(booking)}
                       </span>
                     </td>
+                    <td className="col-refund">
+                      {isRefunded ? (
+                        <span className="status-pill booking-status refunded">
+                          {formatInr(booking.refundAmount || 0)}
+                        </span>
+                      ) : isRefundRequested ? (
+                        <span className="status-pill booking-status pending">
+                          Requested
+                        </span>
+                      ) : refundStatus === "REJECTED" ? (
+                        <span className="status-pill booking-status rejected">Rejected</span>
+                      ) : (
+                        <span className="count-badge">-</span>
+                      )}
+                    </td>
                     <td className="col-action">
-                      {isPaid ? (
-                        <span className="count-badge">Completed</span>
+                      {isRefunded ? (
+                        <span className="count-badge">Refunded</span>
+                      ) : isRefundRequested ? (
+                        <div className="action-buttons booking-action-buttons">
+                          <button
+                            className="edit-icon-btn save-btn"
+                            onClick={() => runAction(approveRefundRequest, booking._id)}
+                          >
+                            Approve Refund
+                          </button>
+                          <button
+                            className="edit-icon-btn delete-btn"
+                            onClick={() => runAction(rejectRefundRequest, booking._id)}
+                          >
+                            Reject Refund
+                          </button>
+                        </div>
+                      ) : isPaid ? (
+                        <span className="count-badge">Paid</span>
+                      ) : normalizedStatus === "CANCELLED" && paymentCompleted ? (
+                        <span className="count-badge">Awaiting Refund</span>
                       ) : (
                         <div className="action-buttons booking-action-buttons">
                           <button
@@ -197,7 +248,7 @@ const BookingManagement = () => {
               })
             ) : (
               <tr>
-                <td colSpan="7" className="empty-table-msg">
+                <td colSpan="8" className="empty-table-msg">
                   No bookings found.
                 </td>
               </tr>

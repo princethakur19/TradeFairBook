@@ -4,9 +4,11 @@ const Stall = require("../models/Stall");
 const AadhaarVerification = require("../models/AadhaarVerification");
 const Material = require("../models/Material");
 
-const BOOKING_STATUSES = ["PENDING", "APPROVED", "REJECTED", "CANCELLED"];
+const BOOKING_STATUSES = ["PENDING", "APPROVED", "PAID", "REJECTED", "CANCELLED", "REFUNDED"];
 const ACTIVE_BOOKING_STATUSES = ["PENDING", "APPROVED", "PAID"];
-const TERMINAL_BOOKING_STATUSES = ["REJECTED", "CANCELLED"];
+const TERMINAL_BOOKING_STATUSES = ["REJECTED", "CANCELLED", "REFUNDED"];
+const REFUND_STATUSES = ["NONE", "REQUESTED", "REJECTED", "REFUNDED"];
+const DEFAULT_REFUND_DEDUCTION_PERCENT = 10;
 const DEFAULT_INCLUDED_MATERIALS = Object.freeze([
   { name: "Table", quantity: 1, price: 0, subtotal: 0 },
   { name: "Chair", quantity: 2, price: 0, subtotal: 0 },
@@ -36,6 +38,35 @@ const toPositiveInteger = (value) => {
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
 };
+const roundCurrency = (value) => Math.round((Number(value) || 0) * 100) / 100;
+const normalizeRefundStatus = (value) => String(value || "").toUpperCase();
+const getRefundStatus = (booking) => normalizeRefundStatus(booking?.refundStatus || "NONE");
+const getBookingTotalAmount = (booking) =>
+  roundCurrency(Number(booking?.grandTotal ?? booking?.amount ?? 0));
+const getRefundDeductionPercent = () => {
+  const parsedPercent = Number.parseFloat(process.env.REFUND_DEDUCTION_PERCENT);
+  if (!Number.isFinite(parsedPercent)) {
+    return DEFAULT_REFUND_DEDUCTION_PERCENT;
+  }
+  return Math.min(Math.max(parsedPercent, 0), 100);
+};
+const calculateRefundBreakdown = (booking) => {
+  const totalAmount = getBookingTotalAmount(booking);
+  const refundPercent = getRefundDeductionPercent();
+  const refundDeductionAmount = roundCurrency((totalAmount * refundPercent) / 100);
+  const refundAmount = roundCurrency(Math.max(totalAmount - refundDeductionAmount, 0));
+
+  return {
+    totalAmount,
+    refundPercent,
+    refundDeductionAmount,
+    refundAmount
+  };
+};
+const normalizeOptionalText = (value, maxLength = 300) =>
+  String(value || "").trim().slice(0, maxLength);
+const hasCompletedPayment = (booking) =>
+  Boolean(booking?.paidAt || booking?.paymentId);
 const distributeAmountAcrossBookings = (total, count) => {
   if (!count) return [];
   const normalizedTotal = Math.max(0, Math.round(Number(total) || 0));
@@ -125,12 +156,11 @@ exports.createBooking = async (req, res) => {
     const {
       stall,
       stallIds,
-      status,
       aadhaarVerificationId,
       defaultMaterials,
       extraMaterials
     } = req.body || {};
-    const normalizedStatus = normalizeStatus(status || "PENDING");
+    const normalizedStatus = "PENDING";
     const requestedStallIds = Array.isArray(stallIds) ? stallIds : stall ? [stall] : [];
     const normalizedStallIds = [...new Set(requestedStallIds.map(toObjectIdString).filter(Boolean))];
 
@@ -138,13 +168,6 @@ exports.createBooking = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "User, at least one stall and aadhaarVerificationId are required"
-      });
-    }
-
-    if (!BOOKING_STATUSES.includes(normalizedStatus)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid booking status"
       });
     }
 
@@ -513,6 +536,13 @@ exports.updateBookingStatus = async (req, res) => {
     const rawStatus = req.body?.status;
     const normalizedStatus = normalizeStatus(rawStatus === "PAID" ? "APPROVED" : rawStatus);
 
+    if (normalizedStatus === "REFUNDED") {
+      return res.status(400).json({
+        success: false,
+        message: "Use refund actions to mark bookings as refunded"
+      });
+    }
+
     if (!BOOKING_STATUSES.includes(normalizedStatus)) {
       return res.status(400).json({
         success: false,
@@ -525,6 +555,14 @@ exports.updateBookingStatus = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Booking not found"
+      });
+    }
+
+    const currentStatus = normalizeStatus(booking.status);
+    if (currentStatus === "PAID" || currentStatus === "REFUNDED") {
+      return res.status(400).json({
+        success: false,
+        message: "Paid or refunded bookings must be managed via payment/refund actions"
       });
     }
 
@@ -571,6 +609,32 @@ exports.cancelBooking = async (req, res) => {
       });
     }
 
+    const bookingStatus = normalizeStatus(booking.status);
+    const refundStatus = getRefundStatus(booking);
+
+    if (bookingStatus === "REFUNDED") {
+      return res.status(400).json({
+        success: false,
+        message: "This booking is already refunded"
+      });
+    }
+
+    if (bookingStatus === "CANCELLED") {
+      return res.status(400).json({
+        success: false,
+        message: "Booking is already cancelled"
+      });
+    }
+
+    if (refundStatus === "REQUESTED") {
+      return res.status(400).json({
+        success: false,
+        message: "Refund request is already pending for this booking"
+      });
+    }
+
+    const wasPaymentCompleted = hasCompletedPayment(booking) || bookingStatus === "PAID";
+
     booking.status = "CANCELLED";
     await booking.save();
     await syncStallStatusForBooking(booking._id);
@@ -579,7 +643,9 @@ exports.cancelBooking = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Booking cancelled successfully",
+      message: wasPaymentCompleted
+        ? "Booking cancelled successfully. You can request refund now."
+        : "Booking cancelled successfully",
       data: updatedBooking
     });
   } catch (error) {
@@ -591,6 +657,249 @@ exports.cancelBooking = async (req, res) => {
   }
 };
 
+/* ===============================
+   REQUEST REFUND (USER OR ADMIN)
+================================= */
+exports.requestBookingRefund = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found"
+      });
+    }
+
+    const role = String(req.user?.role || "").toUpperCase();
+    const canManageAll = canManageAllBookings(role);
+    if (!canManageAll && String(booking.user) !== String(req.user?.id)) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to request a refund for this booking"
+      });
+    }
+
+    const bookingStatus = normalizeStatus(booking.status);
+    const refundStatus = getRefundStatus(booking);
+    const isPaymentCompleted = hasCompletedPayment(booking) || bookingStatus === "PAID";
+    if (bookingStatus === "REFUNDED" || refundStatus === "REFUNDED") {
+      return res.status(400).json({
+        success: false,
+        message: "This booking is already refunded"
+      });
+    }
+
+    if (!isPaymentCompleted) {
+      return res.status(400).json({
+        success: false,
+        message: "Refund is available only for bookings with completed payment"
+      });
+    }
+
+    if (refundStatus === "REQUESTED") {
+      return res.status(400).json({
+        success: false,
+        message: "Refund request is already pending for this booking"
+      });
+    }
+
+    if (bookingStatus !== "CANCELLED") {
+      return res.status(400).json({
+        success: false,
+        message: "Please cancel the booking first, then request refund"
+      });
+    }
+
+    const refundReason = normalizeOptionalText(req.body?.reason, 500);
+    if (!refundReason) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a refund reason"
+      });
+    }
+
+    const breakdown = calculateRefundBreakdown(booking);
+    booking.refundStatus = "REQUESTED";
+    booking.refundReason = refundReason;
+    booking.refundPercent = breakdown.refundPercent;
+    booking.refundDeductionAmount = breakdown.refundDeductionAmount;
+    booking.refundAmount = breakdown.refundAmount;
+    booking.refundRequestedAt = new Date();
+    booking.refundRequestedBy = req.user?.id || null;
+    booking.refundProcessedAt = null;
+    booking.refundProcessedBy = null;
+    booking.refundAdminNote = "";
+    booking.refundReferenceId = "";
+    await booking.save();
+
+    const updatedBooking = await Booking.findById(booking._id).populate(bookingPopulate);
+
+    return res.status(200).json({
+      success: true,
+      message: "Refund request submitted successfully",
+      data: updatedBooking,
+      refundSummary: breakdown
+    });
+  } catch (error) {
+    console.error("Request Refund Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/* ===============================
+   APPROVE REFUND (ADMIN)
+================================= */
+exports.approveRefundRequest = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found"
+      });
+    }
+
+    const bookingStatus = normalizeStatus(booking.status);
+    const refundStatus = getRefundStatus(booking);
+    const isPaymentCompleted = hasCompletedPayment(booking);
+    if (bookingStatus === "REFUNDED" || refundStatus === "REFUNDED") {
+      return res.status(400).json({
+        success: false,
+        message: "This booking is already refunded"
+      });
+    }
+
+    if (!isPaymentCompleted) {
+      return res.status(400).json({
+        success: false,
+        message: "Only bookings with completed payment can be refunded"
+      });
+    }
+
+    if (bookingStatus !== "CANCELLED") {
+      return res.status(400).json({
+        success: false,
+        message: "Refund approval is allowed only for cancelled bookings"
+      });
+    }
+
+    if (refundStatus !== "REQUESTED") {
+      return res.status(400).json({
+        success: false,
+        message: "No pending refund request found for this booking"
+      });
+    }
+
+    const breakdown = {
+      refundPercent: Number(booking.refundPercent || 0),
+      refundDeductionAmount: Number(booking.refundDeductionAmount || 0),
+      refundAmount: Number(booking.refundAmount || 0)
+    };
+    if (!breakdown.refundAmount && !breakdown.refundDeductionAmount) {
+      const calculated = calculateRefundBreakdown(booking);
+      breakdown.refundPercent = calculated.refundPercent;
+      breakdown.refundDeductionAmount = calculated.refundDeductionAmount;
+      breakdown.refundAmount = calculated.refundAmount;
+    }
+
+    booking.status = "REFUNDED";
+    booking.refundStatus = "REFUNDED";
+    booking.refundPercent = breakdown.refundPercent;
+    booking.refundDeductionAmount = breakdown.refundDeductionAmount;
+    booking.refundAmount = breakdown.refundAmount;
+    booking.refundAdminNote = normalizeOptionalText(req.body?.note, 500);
+    booking.refundReferenceId =
+      normalizeOptionalText(req.body?.refundReferenceId, 120) || `mock_refund_${Date.now()}`;
+    booking.refundProcessedAt = new Date();
+    booking.refundProcessedBy = req.user?.id || null;
+    await booking.save();
+    await syncStallStatusForBooking(booking._id);
+
+    const updatedBooking = await Booking.findById(booking._id).populate(bookingPopulate);
+
+    return res.status(200).json({
+      success: true,
+      message: "Refund approved and processed successfully",
+      data: updatedBooking,
+      refundSummary: breakdown
+    });
+  } catch (error) {
+    console.error("Approve Refund Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+/* ===============================
+   REJECT REFUND (ADMIN)
+================================= */
+exports.rejectRefundRequest = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found"
+      });
+    }
+
+    const bookingStatus = normalizeStatus(booking.status);
+    const refundStatus = getRefundStatus(booking);
+    const isPaymentCompleted = hasCompletedPayment(booking);
+
+    if (!isPaymentCompleted) {
+      return res.status(400).json({
+        success: false,
+        message: "Only bookings with completed payment can have refund requests"
+      });
+    }
+
+    if (bookingStatus !== "CANCELLED") {
+      return res.status(400).json({
+        success: false,
+        message: "Refund rejection is allowed only for cancelled bookings"
+      });
+    }
+
+    if (refundStatus !== "REQUESTED") {
+      return res.status(400).json({
+        success: false,
+        message: "No pending refund request found for this booking"
+      });
+    }
+
+    booking.refundStatus = "REJECTED";
+    booking.refundAdminNote = normalizeOptionalText(req.body?.note, 500);
+    booking.refundProcessedAt = new Date();
+    booking.refundProcessedBy = req.user?.id || null;
+    booking.refundReferenceId = "";
+    await booking.save();
+
+    const updatedBooking = await Booking.findById(booking._id).populate(bookingPopulate);
+
+    return res.status(200).json({
+      success: true,
+      message: "Refund request rejected",
+      data: updatedBooking
+    });
+  } catch (error) {
+    console.error("Reject Refund Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 exports.BOOKING_STATUSES = BOOKING_STATUSES;
 exports.ACTIVE_BOOKING_STATUSES = ACTIVE_BOOKING_STATUSES;
 exports.TERMINAL_BOOKING_STATUSES = TERMINAL_BOOKING_STATUSES;
+exports.REFUND_STATUSES = REFUND_STATUSES;

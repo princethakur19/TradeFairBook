@@ -19,3 +19,13 @@ export const cancelBooking = async (id) => {
   const response = await api.put(`/admin/bookings/${id}/cancel`);
   return response.data;
 };
+
+export const approveRefundRequest = async (id, note = "") => {
+  const response = await api.put(`/admin/bookings/${id}/refund/approve`, { note });
+  return response.data;
+};
+
+export const rejectRefundRequest = async (id, note = "") => {
+  const response = await api.put(`/admin/bookings/${id}/refund/reject`, { note });
+  return response.data;
+};

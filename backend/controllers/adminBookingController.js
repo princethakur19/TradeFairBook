@@ -1,7 +1,7 @@
 const Booking = require("../models/Booking");
 const Stall = require("../models/Stall");
 
-const BOOKING_STATUSES = ["PENDING", "APPROVED", "PAID", "REJECTED", "CANCELLED"];
+const BOOKING_STATUSES = ["PENDING", "APPROVED", "PAID", "REJECTED", "CANCELLED", "REFUNDED"];
 const ACTIVE_BOOKING_STATUSES = ["PENDING", "APPROVED", "PAID"];
 
 const normalizeStatus = (value) => String(value || "").trim().toUpperCase();
@@ -87,10 +87,11 @@ const updateBookingStatus = async (req, res, status, actionLabel) => {
       });
     }
 
-    if (String(booking.status || "").toUpperCase() === "PAID") {
+    const normalizedCurrentStatus = String(booking.status || "").toUpperCase();
+    if (normalizedCurrentStatus === "PAID" || normalizedCurrentStatus === "REFUNDED") {
       return res.status(400).json({
         success: false,
-        message: "Paid bookings cannot be modified"
+        message: "Paid or refunded bookings cannot be modified from this action"
       });
     }
 

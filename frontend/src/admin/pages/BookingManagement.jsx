@@ -197,7 +197,7 @@ const BookingManagement = () => {
                     </td>
                     <td className="col-action">
                       {isRefunded ? (
-                        <span className="count-badge">Refunded</span>
+                        <span className="status-pill booking-status refunded">Refunded</span>
                       ) : isRefundRequested ? (
                         <div className="action-buttons booking-action-buttons">
                           <button
@@ -214,9 +214,9 @@ const BookingManagement = () => {
                           </button>
                         </div>
                       ) : isPaid ? (
-                        <span className="count-badge">Paid</span>
+                        <span className="status-pill booking-status paid">Paid</span>
                       ) : normalizedStatus === "CANCELLED" && paymentCompleted ? (
-                        <span className="count-badge">Awaiting Refund</span>
+                        <span className="status-pill booking-status pending">Awaiting Refund</span>
                       ) : (
                         <div className="action-buttons booking-action-buttons">
                           <button

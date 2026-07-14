@@ -5,7 +5,11 @@
   "main": "index.js",
   "scripts": {
     "test": "node tests/stallController.test.js",
-    "migrate:aadhaar": "node scripts/migrateAadhaarData.js"
+    "migrate:aadhaar": "node scripts/migrateAadhaarData.js",
+    "seed:domes": "node scripts/seedDomes.js",
+    "seed:stalls": "node scripts/seedStalls.js",
+    "seed:materials": "node scripts/seedMaterials.js",
+    "seed:base-data": "npm run seed:domes && npm run seed:stalls && npm run seed:materials"
   },
   "keywords": [],
   "author": "",

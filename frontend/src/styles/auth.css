@@ -18,21 +18,42 @@
 .auth-screen {
   min-height: 100vh;
   width: 100%;
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px 16px;
-  background:
-    radial-gradient(circle at 18% 14%, rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0) 36%),
-    radial-gradient(circle at 84% 88%, rgba(24, 122, 149, 0.18), rgba(24, 122, 149, 0) 35%),
-    linear-gradient(130deg, var(--auth-bg-start) 0%, var(--auth-bg-mid) 52%, var(--auth-bg-end) 100%);
+  background: #102838;
   font-family: "Manrope", "Segoe UI", sans-serif;
+}
+
+.auth-screen::before {
+  content: "";
+  position: absolute;
+  inset: -14px;
+  background:
+    linear-gradient(rgba(7, 20, 31, 0.42), rgba(7, 20, 31, 0.48)),
+    url("../assets/background-login.png") center / cover no-repeat;
+  filter: blur(4px);
+  transform: scale(1.02);
+}
+
+.auth-screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 18% 14%, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 34%),
+    radial-gradient(circle at 84% 88%, rgba(35, 165, 200, 0.22), rgba(35, 165, 200, 0) 35%);
 }
 
 .auth-page,
 .login-card {
   width: 100%;
   max-width: 440px;
+  position: relative;
+  z-index: 1;
   background: var(--auth-card);
   border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: 22px;

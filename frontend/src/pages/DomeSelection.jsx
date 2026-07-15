@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
+import LoadingSpinner from "../components/LoadingSpinner";
 import { getAllDomes } from "../services/domeService";
 import "../styles/domeSelection.css";
 
@@ -65,7 +66,7 @@ const DomeSelection = () => {
 
         <section className="dome-container">
           <div className="dome-grid">
-            {loading && <p>Loading domes...</p>}
+            {loading && <LoadingSpinner label="Loading domes..." />}
             {!loading && error && <p>{error}</p>}
             {!loading && !error && domes.length === 0 && <p>No domes available</p>}
 

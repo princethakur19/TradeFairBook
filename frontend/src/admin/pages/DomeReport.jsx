@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import api from "../../api/axios";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 const formatInr = (value) =>
   new Intl.NumberFormat("en-IN", {
@@ -60,7 +61,7 @@ const DomeReport = () => {
   }, [selectedDomeId]);
 
   if (!report) {
-    return <div>Loading report...</div>;
+    return <LoadingSpinner label="Loading report..." />;
   }
 
   const filteredBookings =

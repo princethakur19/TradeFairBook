@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import LoadingSpinner from "../../components/LoadingSpinner";
 import { getAdminDashboardStats } from "../services/adminDashboardService";
 
 const formatInr = (value) =>
@@ -36,7 +37,7 @@ const DashboardStats = () => {
         <h2 className="card-title">Admin Dashboard</h2>
       </div>
 
-      {loading ? <p className="empty-table-msg">Loading dashboard...</p> : null}
+      {loading ? <LoadingSpinner label="Loading dashboard..." /> : null}
       {error ? <p className="manage-feedback manage-feedback-error">{error}</p> : null}
 
       {!loading && !error && stats ? (

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import LoadingSpinner from "../../components/LoadingSpinner";
 import { deleteDome, getAllDomes, updateDome } from "../services/adminDomeServices";
 
 const initialEditForm = {
@@ -153,7 +154,7 @@ const ManageDomes = () => {
             {loading ? (
               <tr>
                 <td colSpan="4" className="empty-table-msg">
-                  Loading domes...
+                  <LoadingSpinner label="Loading domes..." />
                 </td>
               </tr>
             ) : domes.length === 0 ? (

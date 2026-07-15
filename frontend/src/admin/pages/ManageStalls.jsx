@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import api from "../../api/axios";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 const AUTO_REFRESH_MS = 15000;
 const STALL_NUMBER_REGEX = /\d+/;
@@ -384,7 +385,9 @@ const ManageStalls = () => {
         {!selectedDomeId ? (
           <div className="live-layout-empty">Please choose a dome to open the live layout map.</div>
         ) : isLoadingStalls ? (
-          <div className="live-layout-empty">Loading live layout...</div>
+          <div className="live-layout-empty">
+            <LoadingSpinner label="Loading live layout..." />
+          </div>
         ) : !filteredStalls.length ? (
           <div className="live-layout-empty">No stalls found for this dome.</div>
         ) : (
@@ -492,7 +495,7 @@ const ManageStalls = () => {
             {isLoadingStalls ? (
               <tr>
                 <td colSpan="6" className="empty-table-msg">
-                  Loading stalls...
+                  <LoadingSpinner label="Loading stalls..." />
                 </td>
               </tr>
             ) : (

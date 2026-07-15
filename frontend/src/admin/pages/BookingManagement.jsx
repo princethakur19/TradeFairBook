@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import api from "../../api/axios";
+import LoadingSpinner from "../../components/LoadingSpinner";
 import {
   approveBooking,
   approveRefundRequest,
@@ -156,7 +157,7 @@ const BookingManagement = () => {
             {loading ? (
               <tr>
                 <td colSpan="8" className="empty-table-msg">
-                  Loading bookings...
+                  <LoadingSpinner label="Loading bookings..." />
                 </td>
               </tr>
             ) : bookings.length ? (

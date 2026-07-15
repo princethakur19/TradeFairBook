@@ -1,4 +1,5 @@
 import React from "react";
+import LoadingSpinner from "../LoadingSpinner";
 import "../../styles/bookingMaterials.css";
 
 const formatInr = (value) =>
@@ -43,7 +44,7 @@ const BookingMaterialsSection = ({
       </div>
 
       {loading ? (
-        <p className="booking-materials-empty">Loading materials...</p>
+        <LoadingSpinner label="Loading materials..." />
       ) : error ? (
         <p className="booking-materials-error">{error}</p>
       ) : availableMaterials.length === 0 ? (

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import BookingMaterialsSection from "../components/booking/BookingMaterialsSection";
+import LoadingSpinner from "../components/LoadingSpinner";
 import api from "../api/axios";
 import { getActiveMaterialsByDome } from "../services/materialService";
 import { getStallsByDome } from "../services/stallService";
@@ -347,7 +348,7 @@ const UserStallLayout = () => {
       <>
         <Navbar />
         <div className="user-layout-wrapper">
-          <div className="loading">Loading stall layout...</div>
+          <LoadingSpinner label="Loading stall layout..." />
         </div>
         <Footer />
       </>

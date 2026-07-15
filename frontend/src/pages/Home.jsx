@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import HowItWorks from "../components/home/HowItWorks";
+import LoadingSpinner from "../components/LoadingSpinner";
 import { getAllDomes } from "../services/domeService";
 import { hasValidSession, setRedirectAfterLogin } from "../utils/auth";
 
@@ -94,7 +95,7 @@ const Home = () => {
 
         <section className="dome-container">
           <div className="dome-grid">
-            {loadingDomes && <p>Loading domes...</p>}
+            {loadingDomes && <LoadingSpinner label="Loading domes..." />}
             {!loadingDomes && domeError && <p>{domeError}</p>}
             {!loadingDomes && !domeError && domes.length === 0 && <p>No domes available</p>}
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import LoadingSpinner from "../../components/LoadingSpinner";
 import {
   createMaterial,
   deleteMaterial,
@@ -233,7 +234,7 @@ const ManageMaterials = () => {
             {loading ? (
               <tr>
                 <td colSpan="6" className="empty-table-msg">
-                  Loading materials...
+                  <LoadingSpinner label="Loading materials..." />
                 </td>
               </tr>
             ) : filteredMaterials.length === 0 ? (

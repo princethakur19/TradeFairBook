@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
+import LoadingSpinner from "../components/LoadingSpinner";
 import {
   cancelUserBooking,
   createBookingPaymentOrder,
@@ -302,7 +303,9 @@ const MyBookings = () => {
           {error ? <p className="bookings-feedback bookings-feedback-error">{error}</p> : null}
 
           {loading ? (
-            <div className="bookings-empty-state">Loading your bookings...</div>
+            <div className="bookings-empty-state">
+              <LoadingSpinner label="Loading your bookings..." />
+            </div>
           ) : bookings.length === 0 ? (
             <div className="bookings-empty-state">You have not booked any stalls yet.</div>
           ) : (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useStae } from 'react';
 
 const AdminNavbar = ({ activeSection, onSectionChange, onLogout }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);

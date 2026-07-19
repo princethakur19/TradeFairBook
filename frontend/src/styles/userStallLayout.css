@@ -124,7 +124,7 @@
 }
 
 .user-layout-wrapper .panel-title {
-  color: #111111 !important;
+  color: var(--usl-panel-title) !important;
   font-size: 22px;
   font-weight: 700;
   margin: 0 0 25px 0;
@@ -133,7 +133,7 @@
   border-bottom: 2px solid #60a5fa;
   padding-bottom: 15px;
   text-shadow: none;
-  -webkit-text-fill-color: #111111;
+  -webkit-text-fill-color: var(--usl-panel-title);
   opacity: 1;
 }
 

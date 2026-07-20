@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AdminNavbar from '../components/AdminNavbar';
 import DomeReport from './DomeReport';
@@ -24,8 +24,17 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [stallsData, setStallsData] = useState([]);
+  const viewportRef = useRef(null);
 
   const activeSection = useMemo(() => getSectionFromPath(location.pathname), [location.pathname]);
+
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    viewportRef.current?.scrollIntoView({
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      block: 'start'
+    });
+  }, [activeSection]);
 
   const handleSectionChange = (section) => {
     navigate(`/admin/dashboard/${section}`);
@@ -39,7 +48,7 @@ const AdminDashboard = () => {
   return (
     <div className="admin-root">
       <AdminNavbar activeSection={activeSection} onSectionChange={handleSectionChange} onLogout={handleLogout} />
-      <div className="admin-viewport">
+      <div className="admin-viewport" ref={viewportRef}>
         {activeSection === 'dashboard-stats' && <DashboardStats />}
         {activeSection === 'dome-report' && <DomeReport />}
         {activeSection === 'add-dome' && <AddDome />}

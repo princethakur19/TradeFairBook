@@ -11,6 +11,18 @@ html, body, #root {
     overflow-x: hidden;
 }
 
+.admin-layout,
+.admin-layout * {
+    scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-layout,
+    .admin-layout * {
+        scroll-behavior: auto;
+    }
+}
+
 /* 2. Admin Shell */
 .admin-root {
     min-height: 100vh;

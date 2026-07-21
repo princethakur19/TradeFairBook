@@ -108,23 +108,120 @@ body {
 }
 
 /* Theme Toggle Button */
-.theme-toggle {
-  background: transparent;
-  border: 1px solid var(--border-color);
-  color: var(--text-main);
-  width: 36px;
+button.theme-toggle {
+  width: 58px;
   height: 36px;
-  border-radius: 50%;
+  padding: 0;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 999px;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: 0.3s;
+  color: inherit;
+  box-shadow: none !important;
+  outline: none !important;
+  overflow: visible;
+  appearance: none;
+  -webkit-appearance: none;
+  line-height: 0;
+  transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
-.theme-toggle:hover {
-  border-color: var(--primary);
-  color: var(--primary);
+button.theme-toggle:hover {
+  background: transparent !important;
+  border-color: transparent !important;
+  transform: translateY(-1px);
+}
+
+button.theme-toggle:focus,
+button.theme-toggle:focus-visible {
+  background: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+button.theme-toggle svg {
+  width: 58px;
+  height: 36px;
+  display: block;
+}
+
+.theme-switch-container,
+.theme-switch-patches,
+.theme-switch-stars,
+.theme-switch-button,
+.theme-switch-sun,
+.theme-switch-moon,
+.theme-switch-cloud {
+  transition-property: fill, opacity, transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 0.25s;
+}
+
+.theme-switch-container {
+  fill: #83cbd8;
+}
+
+.theme-switch-button {
+  filter: drop-shadow(0 1px 3px rgba(15, 23, 42, 0.2));
+}
+
+.theme-switch-sun {
+  opacity: 1;
+}
+
+.theme-switch-sun-outer {
+  fill: #f8e664;
+}
+
+.theme-switch-sun-glow {
+  fill: rgba(246, 254, 247, 0.29);
+}
+
+.theme-switch-sun-inner {
+  fill: #fcf4b9;
+}
+
+.theme-switch-moon {
+  opacity: 0;
+}
+
+.theme-switch-moon-body {
+  fill: #cce6ee;
+}
+
+.theme-switch-patches {
+  fill: #a6cad0;
+}
+
+.theme-switch-cloud {
+  fill: #ffffff;
+  opacity: 1;
+}
+
+.theme-switch-stars {
+  fill: #def8ff;
+  opacity: 0;
+}
+
+.theme-toggle.dark .theme-switch-container {
+  fill: #2b4360;
+}
+
+.theme-toggle.dark .theme-switch-button {
+  transform: translate(28px, 2.333px);
+}
+
+.theme-toggle.dark .theme-switch-sun,
+.theme-toggle.dark .theme-switch-cloud {
+  opacity: 0;
+}
+
+.theme-toggle.dark .theme-switch-moon,
+.theme-toggle.dark .theme-switch-stars {
+  opacity: 1;
 }
 
 /* Login Button */

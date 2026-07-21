@@ -22,25 +22,6 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Style for the button in the nav */
-.theme-toggle {
-  background: none;
-  border: 1px solid var(--card-border);
-  color: var(--text-main);
-  padding: 8px;
-  cursor: pointer;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-}
-
-.theme-toggle:hover {
-  background-color: var(--card-bg);
-}
 * {
   margin: 0;
   padding: 0;

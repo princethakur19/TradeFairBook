@@ -108,36 +108,41 @@ body {
 }
 
 /* Theme Toggle Button */
-.theme-toggle {
+button.theme-toggle {
   width: 58px;
   height: 36px;
   padding: 0;
   background: transparent !important;
-  border: 0;
+  border: 0 !important;
   border-radius: 999px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   color: inherit;
-  box-shadow: none;
-  outline: none;
+  box-shadow: none !important;
+  outline: none !important;
   overflow: visible;
+  appearance: none;
+  -webkit-appearance: none;
+  line-height: 0;
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
-.theme-toggle:hover {
-  border-color: transparent;
+button.theme-toggle:hover {
+  background: transparent !important;
+  border-color: transparent !important;
   transform: translateY(-1px);
 }
 
-.theme-toggle:focus,
-.theme-toggle:focus-visible {
-  outline: none;
-  box-shadow: none;
+button.theme-toggle:focus,
+button.theme-toggle:focus-visible {
+  background: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
-.theme-toggle svg {
+button.theme-toggle svg {
   width: 58px;
   height: 36px;
   display: block;

@@ -16,6 +16,9 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [isDarkTheme, setIsDarkTheme] = useState(
+    () => document.documentElement.getAttribute("data-theme") === "dark"
+  );
   const [approvedNotifications, setApprovedNotifications] = useState([]);
   const [pendingPaymentCount, setPendingPaymentCount] = useState(0);
   const profileRef = useRef(null);
@@ -111,9 +114,11 @@ const Navbar = () => {
     if (html.getAttribute("data-theme") === "dark") {
       html.removeAttribute("data-theme");
       localStorage.setItem("theme", "light");
+      setIsDarkTheme(false);
     } else {
       html.setAttribute("data-theme", "dark");
       localStorage.setItem("theme", "dark");
+      setIsDarkTheme(true);
     }
   };
 
@@ -141,8 +146,46 @@ const Navbar = () => {
           <li><a href="/#how-it-works" className="nav-link">How it Works</a></li>
 
           <li>
-            <button className="theme-toggle" onClick={toggleTheme}>
-              <i className="fas fa-adjust"></i>
+            <button
+              type="button"
+              className={`theme-toggle ${isDarkTheme ? "dark" : ""}`}
+              onClick={toggleTheme}
+              aria-label="Toggle theme"
+              aria-pressed={isDarkTheme}
+            >
+              <svg viewBox="0 0 69.667 44" aria-hidden="true" focusable="false">
+                <g transform="translate(3.5 3.5)">
+                  <rect className="theme-toggle-track" rx="17.5" height="35" width="60.667" />
+                  <g className="theme-toggle-thumb" transform="translate(2.333 2.333)">
+                    <g className="theme-toggle-sun">
+                      <circle className="theme-toggle-sun-outer" r="15.167" cy="15.167" cx="15.167" />
+                      <circle className="theme-toggle-sun-glow" r="11.667" cy="15.167" cx="15.167" />
+                      <circle className="theme-toggle-sun-inner" r="7" cy="15.167" cx="15.167" />
+                    </g>
+                    <g className="theme-toggle-moon" transform="translate(25.667 0)">
+                      <circle className="theme-toggle-moon-body" r="15.167" cy="15.167" cx="15.167" />
+                      <g className="theme-toggle-moon-patches">
+                        <circle r="2" cy="6.5" cx="18.6" />
+                        <circle r="2" cy="20" cx="15" />
+                        <circle r="1" cy="10" cx="8.7" />
+                        <circle r="1" cy="20.9" cx="26.8" />
+                        <circle r="1.5" cy="12.5" cx="25.8" />
+                      </g>
+                    </g>
+                  </g>
+                  <path
+                    className="theme-toggle-cloud"
+                    d="M46.34,12.88c1.1,0,2.12,.29,3.01,.8,.06-.86,.73-1.55,1.58-1.65,1.22-.14,2.32,.12,3.26,.68,.02-1.14,.4-2.06,1.13-2.68,.9-.76,2.24-.86,3.25-.24,.91,.56,1.33,1.58,1.12,2.62,1.85,.03,3.25,.7,3.85,1.84,.68,1.3,.06,2.47-.62,3.18,.83,.22,1.58,.55,2.23,.98,.58,.38,.86,1.02,.75,1.72-.18,1.14-1.44,2.05-3.46,2.5-1.32,.3-2.79,.18-4.12-.34-.83-.33-1.42-1.01-1.75-1.8-.75,.76-1.62,1.25-2.53,1.25-1.1,0-2.06-.49-2.84-1.15-.92,.55-1.98,.76-3.16,.6-1.64-.22-2.77-.94-3.26-2.08-.36-.84-.27-1.74,.02-2.46-1.4-.53-2.35-1.57-2.35-2.78,0-1.64,1.75-2.97,3.89-2.97Z"
+                  />
+                  <g className="theme-toggle-stars">
+                    <path d="M15.2 5.1l.9 1.8 2 .3-1.5 1.4 .4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z" />
+                    <path d="M24.5 13.8l.6 1.1 1.2.2-.9.8 .2 1.2-1.1-.6-1.1.6 .2-1.2-.9-.8 1.2-.2z" />
+                    <path d="M10.1 23.5l.7 1.4 1.6.2-1.2 1.1 .3 1.6-1.4-.8-1.4.8 .3-1.6-1.2-1.1 1.6-.2z" />
+                    <path d="M27.4 28.6l.5 1 .1 1.1-1-.5-1 .5 .2-1.1-.8-.8 1.1-.2z" />
+                    <path d="M7.5 10.8l.5 1 .1 1.1-1-.5-1 .5 .2-1.1-.8-.8 1.1-.2z" />
+                  </g>
+                </g>
+              </svg>
             </button>
           </li>
 

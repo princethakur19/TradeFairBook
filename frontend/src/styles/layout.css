@@ -109,22 +109,106 @@ body {
 
 /* Theme Toggle Button */
 .theme-toggle {
+  width: 70px;
+  height: 44px;
+  padding: 0;
   background: transparent;
-  border: 1px solid var(--border-color);
-  color: var(--text-main);
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+  border: 0;
+  border-radius: 999px;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: 0.3s;
+  color: inherit;
+  transition: transform 0.2s ease, filter 0.2s ease;
 }
 
 .theme-toggle:hover {
-  border-color: var(--primary);
-  color: var(--primary);
+  border-color: transparent;
+  filter: brightness(1.03);
+  transform: translateY(-1px);
+}
+
+.theme-toggle:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.28);
+  outline-offset: 3px;
+}
+
+.theme-toggle svg {
+  width: 70px;
+  height: 44px;
+  display: block;
+  overflow: visible;
+}
+
+.theme-toggle-track {
+  fill: #83cbd8;
+  filter: drop-shadow(0 3px 8px rgba(15, 23, 42, 0.18));
+}
+
+.theme-toggle-thumb,
+.theme-toggle-track,
+.theme-toggle-sun,
+.theme-toggle-moon,
+.theme-toggle-cloud,
+.theme-toggle-stars {
+  transition-property: opacity, fill, transform;
+  transition-duration: 0.25s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-toggle-sun-outer {
+  fill: #f8e664;
+  filter: drop-shadow(0 2px 4px rgba(178, 126, 8, 0.25));
+}
+
+.theme-toggle-sun-glow {
+  fill: rgba(246, 254, 247, 0.29);
+}
+
+.theme-toggle-sun-inner {
+  fill: #fcf4b9;
+}
+
+.theme-toggle-moon {
+  opacity: 0;
+}
+
+.theme-toggle-moon-body {
+  fill: #cce6ee;
+  filter: drop-shadow(0 2px 4px rgba(15, 23, 42, 0.2));
+}
+
+.theme-toggle-moon-patches {
+  fill: #a6cad0;
+}
+
+.theme-toggle-cloud {
+  fill: #ffffff;
+  opacity: 1;
+}
+
+.theme-toggle-stars {
+  fill: #def8ff;
+  opacity: 0;
+}
+
+.theme-toggle.dark .theme-toggle-track {
+  fill: #2b4360;
+}
+
+.theme-toggle.dark .theme-toggle-thumb {
+  transform: translate(28px, 2.333px);
+}
+
+.theme-toggle.dark .theme-toggle-sun,
+.theme-toggle.dark .theme-toggle-cloud {
+  opacity: 0;
+}
+
+.theme-toggle.dark .theme-toggle-moon,
+.theme-toggle.dark .theme-toggle-stars {
+  opacity: 1;
 }
 
 /* Login Button */

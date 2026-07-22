@@ -225,85 +225,23 @@ button.theme-toggle svg {
 }
 
 /* Login Button */
-.btn-primary,
-.button-primary {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  background-color: #6366f1;
+.btn-primary {
+  background-color: var(--primary);
   color: white;
-  padding: 12px 24px;
-  border-radius: 6px;
+  padding: 8px 20px;
+  border-radius: 50px;
   font-weight: 600;
   text-decoration: none;
   border: none;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
   font-size: 0.9rem;
-  line-height: 1.2;
-  text-shadow: 0 1px 1px rgba(15, 23, 42, 0.18);
-  transition: color 0.2s ease-in-out, box-shadow 0.3s ease, transform 0.3s ease;
+  transition: background-color 0.3s;
 }
-
-.btn-primary::before,
-.button-primary::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background-color: #4f46e5;
-  transform: translateX(-100%);
-  transition: transform 0.5s ease-in-out 0.2s;
-  pointer-events: none;
-}
-
-.btn-primary::after,
-.button-primary::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background:
-    radial-gradient(circle at top right, #4338ca 0 8px, transparent 8px),
-    linear-gradient(135deg, transparent 0 50%, white 50% 100%) top right / 22px 22px no-repeat,
-    radial-gradient(circle at bottom left, #4338ca 0 8px, transparent 8px),
-    linear-gradient(315deg, transparent 0 50%, white 50% 100%) bottom left / 22px 22px no-repeat;
-  transition: transform 0.5s ease-in-out;
-  pointer-events: none;
-}
-
-.btn-primary > *,
-.button-primary > * {
-  position: relative;
-  z-index: 1;
-}
-
-.btn-primary:hover,
-.button-primary:hover {
-  color: white;
-  box-shadow: 0 10px 22px rgba(79, 70, 229, 0.24);
-  transform: translateY(-1px);
-}
-
-.btn-primary:hover::before,
-.button-primary:hover::before {
-  transform: translateX(0);
-}
-
-.btn-primary:hover::after,
-.button-primary:hover::after {
-  transform: translate(4px, -4px);
-}
-
-.btn-primary:disabled,
-.button-primary:disabled {
-  cursor: not-allowed;
-  opacity: 0.65;
-  transform: none;
-  box-shadow: none;
+.btn-primary:hover {
+  background-color: var(--primary-dark);
 }
 
 .btn-secondary {

@@ -16,7 +16,7 @@ import AdminRoute from "./admin/AdminRoute";
 
 const adminDashboardElement = (
   <AdminRoute>
-    <AdminDashboard />
+    <AdminDashboard /> <br />
   </AdminRoute>
 );
 

@@ -2,7 +2,7 @@ import axios from "axios";
 import { getAuthItem } from "../utils/auth";
 
 const api = axios.create({
-  baseURL: "http://localhost:5000/api", // backend base URL
+  baseURL: import.meta.env.VITE_API_URL, // backend base URL
   headers: {
     "Content-Type": "application/json",
   },

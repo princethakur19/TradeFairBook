@@ -1,36 +1,52 @@
-const fs = require("fs");
-const path = require("path");
 const multer = require("multer");
 
-const aadharUploadDir = path.join(__dirname, "..", "uploads", "aadhar");
-fs.mkdirSync(aadharUploadDir, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, aadharUploadDir);
-  },
-  filename: (req, file, cb) => {
-    const safeOriginal = file.originalname.replace(/\s+/g, "-").replace(/[^a-zA-Z0-9.\-_]/g, "");
-    const uniqueName = `${req.user?.id || "user"}-${Date.now()}-${safeOriginal}`;
-    cb(null, uniqueName);
-  }
-});
+/* =========================
+   FILE FILTER
+========================= */
 
 const imageOnlyFilter = (_req, file, cb) => {
   if (!file.mimetype || !file.mimetype.startsWith("image/")) {
     cb(new Error("Only image files are allowed"), false);
     return;
   }
+
   cb(null, true);
 };
+
+/* =========================
+   MEMORY STORAGE
+========================= */
+
+/*
+  We use memoryStorage() instead of diskStorage().
+
+  The uploaded Aadhaar image will temporarily
+  stay in memory and will then be uploaded to
+  Vercel Blob from the controller.
+
+  This is suitable for Vercel deployment because
+  we are not relying on the server's local filesystem.
+*/
+
+const storage = multer.memoryStorage();
+
+/* =========================
+   MULTER CONFIGURATION
+========================= */
 
 const uploadAadharImage = multer({
   storage,
   fileFilter: imageOnlyFilter,
+
   limits: {
+    // Maximum file size: 5 MB
     fileSize: 5 * 1024 * 1024
   }
 });
+
+/* =========================
+   EXPORT
+========================= */
 
 module.exports = {
   uploadAadharImage

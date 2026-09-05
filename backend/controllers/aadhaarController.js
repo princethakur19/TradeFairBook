@@ -1,11 +1,12 @@
+const { put } = require("@vercel/blob");
 const AadhaarVerification = require("../models/AadhaarVerification");
 
 exports.submitAadhaar = async (req, res) => {
   try {
     const userId = req.user?.id;
     const { aadhaarName, aadhaarNumber } = req.body;
+
     const normalizedAadhaar = String(aadhaarNumber || "").replace(/\D/g, "");
-    const aadhaarImagePath = req.file ? `/uploads/aadhar/${req.file.filename}` : "";
 
     if (!userId) {
       return res.status(401).json({
@@ -21,18 +22,29 @@ exports.submitAadhaar = async (req, res) => {
       });
     }
 
-    if (!aadhaarImagePath) {
+    if (!req.file) {
       return res.status(400).json({
         success: false,
         message: "Aadhaar image upload is required"
       });
     }
 
+    const safeOriginalName = req.file.originalname
+      .replace(/\s+/g, "-")
+      .replace(/[^a-zA-Z0-9.\-_]/g, "");
+
+    const blobPath = `aadhar/${userId}-${Date.now()}-${safeOriginalName}`;
+
+    const blob = await put(blobPath, req.file.buffer, {
+      access: "private",
+      contentType: req.file.mimetype
+    });
+
     const verification = await AadhaarVerification.create({
       user: userId,
       aadhaarName: aadhaarName.trim(),
       aadhaarNumber: normalizedAadhaar,
-      aadhaarImage: aadhaarImagePath
+      aadhaarImage: blob.pathname
     });
 
     const responseData = await AadhaarVerification.findById(verification._id)
@@ -46,6 +58,7 @@ exports.submitAadhaar = async (req, res) => {
     });
   } catch (error) {
     console.error("Submit Aadhaar Error:", error);
+
     return res.status(500).json({
       success: false,
       message: error.message || "Failed to submit Aadhaar"

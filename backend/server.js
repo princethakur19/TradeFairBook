@@ -1,10 +1,15 @@
 const express = require("express");
-const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 
+const connectDB = require("./utils/db");
+
 const app = express();
+
+/* =========================
+   CORS
+========================= */
 
 const allowedOrigins = [
   "http://localhost:5173",
@@ -31,24 +36,46 @@ const isLocalDevOrigin = (origin) => {
   }
 };
 
-/* Middleware */
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin) || isLocalDevOrigin(origin)) {
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        isLocalDevOrigin(origin)
+      ) {
         return callback(null, true);
       }
 
       return callback(new Error(`CORS blocked origin: ${origin}`));
     },
-    credentials: true,
+    credentials: true
   })
 );
 
-app.use(express.json());
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+/* =========================
+   BODY PARSERS
+========================= */
 
-/* Routes */
+app.use(express.json());
+
+/* =========================
+   DATABASE
+========================= */
+
+app.use(async (_req, _res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+/* =========================
+   ROUTES
+========================= */
+
 const authRoutes = require("./routes/authRoutes");
 const domeRoutes = require("./routes/domeRoutes");
 const stallRoutes = require("./routes/stallRoutes");
@@ -57,7 +84,6 @@ const aadhaarRoutes = require("./routes/aadhaarRoutes");
 const reportRoutes = require("./routes/reportRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const materialRoutes = require("./routes/materialRoutes");
-const Material = require("./models/Material");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/domes", domeRoutes);
@@ -68,23 +94,43 @@ app.use("/api/reports", reportRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/materials", materialRoutes);
 
-/* Test Route */
-app.get("/", (req, res) => {
-  res.json({ message: "Trade Fair Backend Running Successfully" });
+/* =========================
+   HEALTH / TEST ROUTE
+========================= */
+
+app.get("/", (_req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Trade Fair Backend Running Successfully"
+  });
 });
 
-/* Error Handlerr */
+/* =========================
+   ERROR HANDLER
+========================= */
+
 app.use((err, _req, res, _next) => {
-  if (!err) {
-    return res.status(500).json({ success: false, message: "Unknown server error" });
-  }
+  console.error("Server Error:", err);
 
   if (err.name === "MulterError" && err.code === "LIMIT_FILE_SIZE") {
-    return res.status(400).json({ success: false, message: "Aadhaar image size must be under 5MB" });
+    return res.status(400).json({
+      success: false,
+      message: "Aadhaar image size must be under 5MB"
+    });
   }
 
   if (err.message === "Only image files are allowed") {
-    return res.status(400).json({ success: false, message: err.message });
+    return res.status(400).json({
+      success: false,
+      message: err.message
+    });
+  }
+
+  if (err.message?.startsWith("CORS blocked origin")) {
+    return res.status(403).json({
+      success: false,
+      message: err.message
+    });
   }
 
   return res.status(500).json({
@@ -93,17 +139,20 @@ app.use((err, _req, res, _next) => {
   });
 });
 
-/* MongoDB Connection */
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(async () => {
-    console.log("✅ MongoDB Connected");
-    await Material.syncIndexes();
-    const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.error("❌ MongoDB connection error:", err);
+/* =========================
+   LOCAL DEVELOPMENT
+========================= */
+
+if (require.main === module) {
+  const PORT = process.env.PORT || 5000;
+
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
   });
+}
+
+/* =========================
+   EXPORT FOR VERCEL
+========================= */
+
+module.exports = app;

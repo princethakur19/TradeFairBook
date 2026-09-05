@@ -7,6 +7,7 @@ const connectDB = require("./utils/db");
 const { getDatabaseErrorMessage } = require("./utils/dbError");
 
 const app = express();
+const isDemoAuthEnabled = () => String(process.env.DEMO_AUTH_ENABLED || "false").toLowerCase() === "true";
 
 /* =========================
    CORS
@@ -65,16 +66,17 @@ app.use(express.json());
    DATABASE
 ========================= */
 
-app.use(async (_req, _res, next) => {
+app.use(async (req, res, next) => {
   const publicFallbackRoutes = [
-    _req.method === "GET" && _req.path === "/api/domes",
-    _req.method === "GET" && _req.path.startsWith("/api/domes/"),
-    _req.method === "GET" && _req.path.startsWith("/api/stalls/"),
-    _req.method === "GET" && _req.path === "/api/materials",
-    _req.method === "POST" && _req.path === "/api/aadhaar/submit",
-    _req.method === "POST" && (_req.path === "/api/bookings/create" || _req.path === "/api/bookings"),
-    _req.method === "GET" && _req.path.startsWith("/api/bookings/user/"),
-    _req.method === "POST" && _req.path.startsWith("/api/auth/")
+    req.method === "GET" && req.path === "/api/domes",
+    req.method === "GET" && req.path.startsWith("/api/domes/"),
+    req.method === "GET" && req.path.startsWith("/api/stalls/"),
+    req.method === "GET" && req.path === "/api/materials",
+    req.method === "POST" && req.path === "/api/aadhaar/submit",
+    req.method === "POST" && (req.path === "/api/bookings/create" || req.path === "/api/bookings"),
+    req.method === "GET" && req.path.startsWith("/api/bookings/user/"),
+    isDemoAuthEnabled() && req.method === "POST" && req.path === "/api/auth/login",
+    isDemoAuthEnabled() && req.method === "GET" && req.path === "/api/admin/dashboard/stats"
   ];
 
   if (publicFallbackRoutes.some(Boolean)) {

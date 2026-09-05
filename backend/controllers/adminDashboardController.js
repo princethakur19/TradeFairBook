@@ -2,9 +2,29 @@ const Booking = require("../models/Booking");
 const User = require("../models/User");
 
 const REVENUE_BOOKING_STATUSES = ["PAID"];
+const isDemoAuthEnabled = () => String(process.env.DEMO_AUTH_ENABLED || "false").toLowerCase() === "true";
 
-exports.getDashboardStats = async (_req, res) => {
+const getFallbackStats = () => ({
+  totalUsers: 1,
+  totalBookings: 0,
+  pendingBookings: 0,
+  approvedBookings: 0,
+  paidBookings: 0,
+  refundedBookings: 0,
+  rejectedBookings: 0,
+  totalRevenue: 0,
+  revenueByDome: []
+});
+
+exports.getDashboardStats = async (req, res) => {
   try {
+    if (isDemoAuthEnabled() && req.user?.demo) {
+      return res.status(200).json({
+        success: true,
+        data: getFallbackStats()
+      });
+    }
+
     const [totalUsers, totalBookings, statusCounts, revenueAgg, revenueByDome] = await Promise.all([
       User.countDocuments(),
       Booking.countDocuments(),
@@ -81,6 +101,14 @@ exports.getDashboardStats = async (_req, res) => {
       }
     });
   } catch (error) {
+    if (isDemoAuthEnabled()) {
+      return res.status(200).json({
+        success: true,
+        data: getFallbackStats(),
+        message: "Using demo dashboard stats because the database is unavailable."
+      });
+    }
+
     return res.status(500).json({
       success: false,
       message: error.message

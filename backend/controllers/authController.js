@@ -6,14 +6,15 @@ const { getDatabaseErrorMessage } = require("../utils/dbError");
 const connectDB = require("../utils/db");
 
 const normalizeRole = (role) => String(role || "").trim().toUpperCase();
-const isDemoAuthEnabled = () => String(process.env.DEMO_AUTH_ENABLED || "true").toLowerCase() !== "false";
+const isDemoAuthEnabled = () => String(process.env.DEMO_AUTH_ENABLED || "false").toLowerCase() === "true";
 
 const createTokenForUser = (user) => jwt.sign(
   {
     id: user.id,
     role: user.role,
     fullname: user.fullname,
-    email: user.email
+    email: user.email,
+    demo: Boolean(user.demo)
   },
   process.env.JWT_SECRET,
   { expiresIn: "1d" }
@@ -32,18 +33,20 @@ const loginWithDemoUser = ({ email, password, role }) => {
 
   const normalizedRequestedRole = normalizeRole(role) || "USER";
   const normalizedEmail = String(email || "").trim().toLowerCase();
+  const demoEmail = String(process.env.DEMO_LOGIN_EMAIL || process.env.DEMO_ADMIN_EMAIL || "").trim().toLowerCase();
+  const demoPassword = String(process.env.DEMO_LOGIN_PASSWORD || process.env.DEMO_ADMIN_PASSWORD || "");
+  const demoRole = normalizeRole(process.env.DEMO_LOGIN_ROLE || process.env.DEMO_ADMIN_ROLE || "ADMIN");
 
-  if (!normalizedEmail || !password || String(password).length < 6) {
+  if (!demoEmail || !demoPassword || !normalizedEmail || !password) {
     return null;
   }
 
-  if (normalizedRequestedRole !== "USER") {
-    const adminEmail = String(process.env.DEMO_ADMIN_EMAIL || "").trim().toLowerCase();
-    const adminPassword = String(process.env.DEMO_ADMIN_PASSWORD || "");
-
-    if (!adminEmail || !adminPassword || normalizedEmail !== adminEmail || password !== adminPassword) {
-      return null;
-    }
+  if (
+    normalizedEmail !== demoEmail ||
+    password !== demoPassword ||
+    normalizedRequestedRole !== demoRole
+  ) {
+    return null;
   }
 
   const publicUser = {
@@ -51,7 +54,8 @@ const loginWithDemoUser = ({ email, password, role }) => {
     fullname: normalizedEmail.split("@")[0] || "Demo User",
     email: normalizedEmail,
     company: "Demo Company",
-    role: normalizedRequestedRole
+    role: normalizedRequestedRole,
+    demo: true
   };
 
   return {
@@ -102,11 +106,9 @@ const login = async (req, res) => {
     const { email, password, role } = req.body;
     const normalizedRequestedRole = normalizeRole(role);
 
-    if (isDemoAuthEnabled() && normalizedRequestedRole === "USER") {
-      const demoLogin = loginWithDemoUser(req.body);
-      if (demoLogin) {
-        return res.json(demoLogin);
-      }
+    const demoLogin = loginWithDemoUser(req.body);
+    if (demoLogin) {
+      return res.json(demoLogin);
     }
 
     await connectDB();
@@ -152,11 +154,6 @@ const login = async (req, res) => {
     });
   } catch (error) {
     console.error("Login Error:", error);
-
-    const demoLogin = loginWithDemoUser(req.body);
-    if (demoLogin) {
-      return res.json(demoLogin);
-    }
 
     return res.status(500).json({
       msg: getDatabaseErrorMessage(error)

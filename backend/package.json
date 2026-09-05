@@ -8,6 +8,7 @@
     "dev": "nodemon server.js",
     "test": "node tests/stallController.test.js",
     "migrate:aadhaar": "node scripts/migrateAadhaarData.js",
+    "seed:admin": "node scripts/seedAdmin.js",
     "seed:domes": "node scripts/seedDomes.js",
     "seed:stalls": "node scripts/seedStalls.js",
     "seed:materials": "node scripts/seedMaterials.js",

@@ -3,6 +3,12 @@ const Booking = require("../models/Booking");
 const Stall = require("../models/Stall");
 const AadhaarVerification = require("../models/AadhaarVerification");
 const Material = require("../models/Material");
+const defaultDomes = require("../data/defaultDomes");
+const { buildDefaultStallsForDome } = require("../data/defaultStalls");
+const { buildDefaultMaterialsForDome } = require("../data/defaultMaterials");
+const { getFallbackBookings, saveFallbackBookings } = require("../data/fallbackBookings");
+const connectDB = require("../utils/db");
+const { isFallbackDataEnabled } = require("../utils/fallbackMode");
 
 const BOOKING_STATUSES = ["PENDING", "APPROVED", "PAID", "REJECTED", "CANCELLED", "REFUNDED"];
 const ACTIVE_BOOKING_STATUSES = ["PENDING", "APPROVED", "PAID"];
@@ -78,6 +84,99 @@ const distributeAmountAcrossBookings = (total, count) => {
     if (remainder > 0) remainder -= 1;
     return share;
   });
+};
+const getFallbackStallMap = () => new Map(
+  defaultDomes.flatMap((dome) => buildDefaultStallsForDome(dome._id))
+    .map((stall) => [String(stall._id), stall])
+);
+const createFallbackBookingResponse = ({
+  userId,
+  normalizedStallIds,
+  aadhaarVerificationId,
+  defaultMaterials,
+  extraMaterials
+}) => {
+  const fallbackStallMap = getFallbackStallMap();
+  const selectedStalls = normalizedStallIds.map((stallId) => fallbackStallMap.get(stallId));
+
+  if (selectedStalls.some((stall) => !stall)) {
+    return null;
+  }
+
+  const normalizedDefaultMaterials = Array.isArray(defaultMaterials) && defaultMaterials.length
+    ? defaultMaterials
+      .map((item) => ({
+        name: String(item?.name || "").trim(),
+        quantity: toPositiveInteger(item?.quantity),
+        price: 0,
+        subtotal: 0
+      }))
+      .filter((item) => item.name && item.quantity > 0)
+    : DEFAULT_INCLUDED_MATERIALS;
+
+  const domeId = String(selectedStalls[0].dome);
+  const fallbackMaterials = new Map(
+    buildDefaultMaterialsForDome(domeId).map((material) => [String(material._id), material])
+  );
+  let extraMaterialTotal = 0;
+  const normalizedExtraMaterials = Array.isArray(extraMaterials)
+    ? extraMaterials
+      .map((item) => ({
+        materialId: toObjectIdString(item?.materialId),
+        quantity: toPositiveInteger(item?.quantity)
+      }))
+      .filter((item) => item.materialId && item.quantity > 0)
+      .map((item) => {
+        const material = fallbackMaterials.get(item.materialId);
+        if (!material) return null;
+
+        const price = Number(material.price || 0);
+        const subtotal = price * item.quantity;
+        extraMaterialTotal += subtotal;
+
+        return {
+          materialId: item.materialId,
+          name: material.name,
+          price,
+          quantity: item.quantity,
+          subtotal
+        };
+      })
+      .filter(Boolean)
+    : [];
+  const distributedExtraShares = distributeAmountAcrossBookings(extraMaterialTotal, selectedStalls.length);
+  const bookings = selectedStalls.map((stall, index) => {
+    const extraMaterialShare = distributedExtraShares[index] || 0;
+    const stallPrice = Number(stall.price || 0);
+    const dome = defaultDomes.find((item) => item._id === String(stall.dome));
+
+    return {
+      _id: `${String(stall._id).slice(0, 20)}b${String(index + 1).padStart(3, "0")}`,
+      user: userId,
+      stall,
+      dome,
+      stallPrice,
+      amount: stallPrice + extraMaterialShare,
+      defaultMaterials: normalizedDefaultMaterials,
+      extraMaterials: normalizedExtraMaterials,
+      extraMaterialTotal,
+      extraMaterialShare,
+      grandTotal: stallPrice + extraMaterialShare,
+      aadhaarVerification: aadhaarVerificationId,
+      status: "PENDING",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+  });
+
+  return {
+    success: true,
+    message: bookings.length === 1 ? "Booking created successfully" : `${bookings.length} bookings created successfully`,
+    count: bookings.length,
+    data: bookings.length === 1 ? bookings[0] : bookings,
+    bookings,
+    fallback: true
+  };
 };
 
 const syncStallStatusForBooking = async (bookingId) => {
@@ -164,14 +263,33 @@ exports.createBooking = async (req, res) => {
     const requestedStallIds = Array.isArray(stallIds) ? stallIds : stall ? [stall] : [];
     const normalizedStallIds = [...new Set(requestedStallIds.map(toObjectIdString).filter(Boolean))];
 
-    if (!userId || !normalizedStallIds.length || !aadhaarVerificationId) {
-      return res.status(400).json({
+	    if (!userId || !normalizedStallIds.length || !aadhaarVerificationId) {
+	      return res.status(400).json({
         success: false,
         message: "User, at least one stall and aadhaarVerificationId are required"
+	      });
+	    }
+
+    if (isFallbackDataEnabled()) {
+      const fallbackResponse = createFallbackBookingResponse({
+        userId,
+        normalizedStallIds,
+        aadhaarVerificationId,
+        defaultMaterials,
+        extraMaterials
       });
+
+      if (fallbackResponse) {
+        saveFallbackBookings(userId, fallbackResponse.bookings);
+        delete fallbackResponse.bookings;
+
+        return res.status(201).json(fallbackResponse);
+      }
     }
 
-    const aadhaarVerification = await AadhaarVerification.findOne({
+    await connectDB();
+	
+	    const aadhaarVerification = await AadhaarVerification.findOne({
       _id: aadhaarVerificationId,
       user: userId
     });
@@ -336,6 +454,19 @@ exports.getUserBookings = async (req, res) => {
         message: "You are not allowed to view these bookings"
       });
     }
+
+    if (isFallbackDataEnabled()) {
+      const bookings = getFallbackBookings(userId);
+
+      return res.status(200).json({
+        success: true,
+        count: bookings.length,
+        data: bookings,
+        fallback: true
+      });
+    }
+
+    await connectDB();
 
     const bookings = await Booking.find({ user: userId })
       .populate(bookingPopulate)

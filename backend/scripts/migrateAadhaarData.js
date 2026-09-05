@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 require("dotenv").config();
 const mongoose = require("mongoose");
+const { normalizeMongoUri } = require("../utils/db");
 
 const Booking = require("../models/Booking");
 const AadhaarVerification = require("../models/AadhaarVerification");
@@ -23,7 +24,7 @@ const runMigration = async () => {
     throw new Error("MONGO_URI is missing");
   }
 
-  await mongoose.connect(process.env.MONGO_URI);
+  await mongoose.connect(normalizeMongoUri(process.env.MONGO_URI));
   console.log("Connected to MongoDB");
 
   const bookingsCollection = mongoose.connection.collection("bookings");

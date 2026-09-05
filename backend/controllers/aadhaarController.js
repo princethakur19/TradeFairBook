@@ -1,5 +1,16 @@
 const { put } = require("@vercel/blob");
 const AadhaarVerification = require("../models/AadhaarVerification");
+const connectDB = require("../utils/db");
+const { isFallbackDataEnabled } = require("../utils/fallbackMode");
+
+const createFallbackVerification = ({ userId, aadhaarName }) => ({
+  _id: `${String(userId).slice(0, 20)}0aad`,
+  user: userId,
+  aadhaarName: aadhaarName.trim(),
+  aadhaarImage: "fallback/aadhaar-upload",
+  verified: false,
+  submittedAt: new Date().toISOString()
+});
 
 exports.submitAadhaar = async (req, res) => {
   try {
@@ -28,6 +39,17 @@ exports.submitAadhaar = async (req, res) => {
         message: "Aadhaar image upload is required"
       });
     }
+
+    if (isFallbackDataEnabled()) {
+      return res.status(201).json({
+        success: true,
+        message: "Aadhaar submitted successfully",
+        data: createFallbackVerification({ userId, aadhaarName }),
+        fallback: true
+      });
+    }
+
+    await connectDB();
 
     const safeOriginalName = req.file.originalname
       .replace(/\s+/g, "-")

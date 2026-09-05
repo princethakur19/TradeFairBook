@@ -103,7 +103,6 @@ const UserStallLayout = () => {
         setAvailableMaterials(materials);
       } catch (error) {
         console.error("Error fetching materials:", error);
-        setMaterialsError("Failed to load extra materials.");
         setAvailableMaterials([]);
       } finally {
         setMaterialsLoading(false);

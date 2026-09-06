@@ -1,6 +1,7 @@
 const Material = require("../models/Material");
 const Dome = require("../models/Dome");
 const connectDB = require("../utils/db");
+const { getDatabaseErrorMessage } = require("../utils/dbError");
 const { buildDefaultMaterialsForDome } = require("../data/defaultMaterials");
 const { isFallbackDataEnabled } = require("../utils/fallbackMode");
 
@@ -76,7 +77,7 @@ exports.createMaterial = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: getDatabaseErrorMessage(error)
     });
   }
 };
@@ -134,7 +135,7 @@ exports.getAllMaterials = async (_req, res) => {
 
     return res.status(503).json({
       success: false,
-      message: "Failed to load materials. Please check the database connection."
+      message: getDatabaseErrorMessage(error)
     });
   }
 };
@@ -230,7 +231,7 @@ exports.updateMaterial = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: getDatabaseErrorMessage(error)
     });
   }
 };
@@ -253,7 +254,7 @@ exports.deleteMaterial = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: getDatabaseErrorMessage(error)
     });
   }
 };

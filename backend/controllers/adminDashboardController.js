@@ -1,5 +1,6 @@
 const Booking = require("../models/Booking");
 const User = require("../models/User");
+const { getDatabaseErrorMessage } = require("../utils/dbError");
 
 const REVENUE_BOOKING_STATUSES = ["PAID"];
 const isDemoAuthEnabled = () => String(process.env.DEMO_AUTH_ENABLED || "false").toLowerCase() === "true";
@@ -111,7 +112,7 @@ exports.getDashboardStats = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: getDatabaseErrorMessage(error)
     });
   }
 };

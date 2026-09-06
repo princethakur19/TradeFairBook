@@ -2,6 +2,7 @@ const Stall = require("../models/Stall");
 const defaultDomes = require("../data/defaultDomes");
 const { buildDefaultStallsForDome } = require("../data/defaultStalls");
 const connectDB = require("../utils/db");
+const { getDatabaseErrorMessage } = require("../utils/dbError");
 const { isFallbackDataEnabled } = require("../utils/fallbackMode");
 
 exports.createStalls = async (req, res) => {
@@ -45,7 +46,7 @@ exports.getAllStalls = async (_req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: getDatabaseErrorMessage(error)
     });
   }
 };
@@ -96,7 +97,7 @@ exports.getStallsByDome = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: getDatabaseErrorMessage(error)
     });
   }
 };
@@ -125,7 +126,7 @@ exports.updateStall = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: getDatabaseErrorMessage(error)
     });
   }
 };
@@ -148,7 +149,7 @@ exports.deleteStall = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: getDatabaseErrorMessage(error)
     });
   }
 };
@@ -171,7 +172,7 @@ exports.getStallById = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: getDatabaseErrorMessage(error)
     });
   }
 };

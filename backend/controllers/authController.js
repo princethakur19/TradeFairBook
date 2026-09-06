@@ -7,6 +7,8 @@ const connectDB = require("../utils/db");
 
 const normalizeRole = (role) => String(role || "").trim().toUpperCase();
 const isDemoAuthEnabled = () => String(process.env.DEMO_AUTH_ENABLED || "false").toLowerCase() === "true";
+const isDemoUserFallbackEnabled = () =>
+  String(process.env.DEMO_USER_FALLBACK_ENABLED || process.env.DEMO_AUTH_ENABLED || "false").toLowerCase() === "true";
 
 const createTokenForUser = (user) => jwt.sign(
   {
@@ -67,6 +69,38 @@ const loginWithDemoUser = ({ email, password, role }) => {
   };
 };
 
+const loginWithFallbackUser = ({ email, password, role }, error) => {
+  const normalizedRequestedRole = normalizeRole(role) || "USER";
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+
+  if (
+    !isDemoUserFallbackEnabled() ||
+    normalizedRequestedRole !== "USER" ||
+    !normalizedEmail ||
+    !password
+  ) {
+    return null;
+  }
+
+  const publicUser = {
+    id: getDemoUserId(normalizedEmail),
+    fullname: normalizedEmail.split("@")[0] || "Demo User",
+    email: normalizedEmail,
+    company: "Demo Company",
+    role: "USER",
+    demo: true
+  };
+
+  return {
+    success: true,
+    token: createTokenForUser(publicUser),
+    role: "USER",
+    user: publicUser,
+    demo: true,
+    message: getDatabaseErrorMessage(error)
+  };
+};
+
 // REGISTER (ONLY USER)
 const register = async (req, res) => {
   try {
@@ -94,7 +128,7 @@ const register = async (req, res) => {
   } catch (error) {
     console.error("Register Error:", error);
 
-    return res.status(500).json({
+    return res.status(503).json({
       msg: getDatabaseErrorMessage(error)
     });
   }
@@ -155,7 +189,12 @@ const login = async (req, res) => {
   } catch (error) {
     console.error("Login Error:", error);
 
-    return res.status(500).json({
+    const fallbackLogin = loginWithFallbackUser(req.body, error);
+    if (fallbackLogin) {
+      return res.json(fallbackLogin);
+    }
+
+    return res.status(503).json({
       msg: getDatabaseErrorMessage(error)
     });
   }

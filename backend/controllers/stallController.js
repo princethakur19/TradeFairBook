@@ -1,4 +1,9 @@
 const Stall = require("../models/Stall");
+const defaultDomes = require("../data/defaultDomes");
+const { buildDefaultStallsForDome } = require("../data/defaultStalls");
+const connectDB = require("../utils/db");
+const { getDatabaseErrorMessage } = require("../utils/dbError");
+const { isFallbackDataEnabled } = require("../utils/fallbackMode");
 
 exports.createStalls = async (req, res) => {
   try {
@@ -29,6 +34,8 @@ exports.createStalls = async (req, res) => {
 
 exports.getAllStalls = async (_req, res) => {
   try {
+    await connectDB();
+
     const stalls = await Stall.find().populate("dome", "domeName location");
 
     return res.status(200).json({
@@ -39,13 +46,30 @@ exports.getAllStalls = async (_req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: getDatabaseErrorMessage(error)
     });
   }
 };
 
 exports.getStallsByDome = async (req, res) => {
   try {
+    if (isFallbackDataEnabled()) {
+      const fallbackDome = defaultDomes.find((dome) => dome._id === req.params.domeId);
+
+      if (fallbackDome) {
+        const stalls = buildDefaultStallsForDome(req.params.domeId);
+
+        return res.status(200).json({
+          success: true,
+          count: stalls.length,
+          data: stalls,
+          fallback: true
+        });
+      }
+    }
+
+    await connectDB();
+
     const stalls = await Stall.find({
       dome: req.params.domeId
     })
@@ -58,9 +82,22 @@ exports.getStallsByDome = async (req, res) => {
       data: stalls
     });
   } catch (error) {
+    const fallbackDome = defaultDomes.find((dome) => dome._id === req.params.domeId);
+
+    if (fallbackDome) {
+      const stalls = buildDefaultStallsForDome(req.params.domeId);
+
+      return res.status(200).json({
+        success: true,
+        count: stalls.length,
+        data: stalls,
+        fallback: true
+      });
+    }
+
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: getDatabaseErrorMessage(error)
     });
   }
 };
@@ -89,7 +126,7 @@ exports.updateStall = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: getDatabaseErrorMessage(error)
     });
   }
 };
@@ -112,7 +149,7 @@ exports.deleteStall = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: getDatabaseErrorMessage(error)
     });
   }
 };
@@ -135,7 +172,7 @@ exports.getStallById = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: getDatabaseErrorMessage(error)
     });
   }
 };

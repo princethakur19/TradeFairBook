@@ -1,5 +1,6 @@
 const Booking = require("../models/Booking");
 const Stall = require("../models/Stall");
+const { getDatabaseErrorMessage } = require("../utils/dbError");
 
 const BOOKING_STATUSES = ["PENDING", "APPROVED", "PAID", "REJECTED", "CANCELLED", "REFUNDED"];
 const ACTIVE_BOOKING_STATUSES = ["PENDING", "APPROVED", "PAID"];
@@ -71,7 +72,7 @@ exports.getAdminBookings = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: getDatabaseErrorMessage(error)
     });
   }
 };
@@ -109,7 +110,7 @@ const updateBookingStatus = async (req, res, status, actionLabel) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: getDatabaseErrorMessage(error)
     });
   }
 };
@@ -141,7 +142,7 @@ exports.getBookingAadhaarDetails = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: getDatabaseErrorMessage(error)
     });
   }
 };

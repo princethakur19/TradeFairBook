@@ -4,6 +4,7 @@ import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { getAllDomes } from "../services/domeService";
+import { defaultDomes } from "../data/defaultDomes";
 import "../styles/domeSelection.css";
 
 const DomeSelection = () => {
@@ -30,7 +31,9 @@ const DomeSelection = () => {
         setSelectedDomeId(domeList[0]?._id || "");
       } catch (fetchError) {
         console.error("Error fetching domes:", fetchError);
-        setError("Failed to load domes. Please try again.");
+        setDomes(defaultDomes);
+        setSelectedDomeId(defaultDomes[0]?._id || "");
+        setError("");
       } finally {
         setLoading(false);
       }

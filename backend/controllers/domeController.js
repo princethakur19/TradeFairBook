@@ -1,5 +1,8 @@
 const Dome = require("../models/Dome");
 const Stall = require("../models/Stall");
+const defaultDomes = require("../data/defaultDomes");
+const connectDB = require("../utils/db");
+const { isFallbackDataEnabled } = require("../utils/fallbackMode");
 
 /* =====================================================
    CREATE DOME
@@ -55,6 +58,17 @@ exports.createDome = async (req, res) => {
 ===================================================== */
 exports.getAllDomes = async (req, res) => {
   try {
+    if (isFallbackDataEnabled()) {
+      return res.status(200).json({
+        success: true,
+        count: defaultDomes.length,
+        data: defaultDomes,
+        fallback: true
+      });
+    }
+
+    await connectDB();
+
     const [domes, stallStats] = await Promise.all([
       Dome.find().sort({ createdAt: -1 }).lean(),
       Stall.aggregate([
@@ -101,17 +115,21 @@ exports.getAllDomes = async (req, res) => {
       };
     });
 
+    const visibleDomes = domesWithStats.length ? domesWithStats : defaultDomes;
+
     res.status(200).json({
       success: true,
-      count: domesWithStats.length,
-      data: domesWithStats
+      count: visibleDomes.length,
+      data: visibleDomes
     });
 
   } catch (error) {
     console.error("Get Domes Error:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message
+    res.status(200).json({
+      success: true,
+      count: defaultDomes.length,
+      data: defaultDomes,
+      fallback: true
     });
   }
 };
@@ -122,6 +140,20 @@ exports.getAllDomes = async (req, res) => {
 ===================================================== */
 exports.getDomeById = async (req, res) => {
   try {
+    if (isFallbackDataEnabled()) {
+      const fallbackDome = defaultDomes.find((dome) => dome._id === req.params.id);
+
+      if (fallbackDome) {
+        return res.status(200).json({
+          success: true,
+          data: fallbackDome,
+          fallback: true
+        });
+      }
+    }
+
+    await connectDB();
+
     const dome = await Dome.findById(req.params.id);
 
     if (!dome) {
@@ -138,6 +170,16 @@ exports.getDomeById = async (req, res) => {
 
   } catch (error) {
     console.error("Get Dome By ID Error:", error);
+    const fallbackDome = defaultDomes.find((dome) => dome._id === req.params.id);
+
+    if (fallbackDome) {
+      return res.status(200).json({
+        success: true,
+        data: fallbackDome,
+        fallback: true
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: error.message

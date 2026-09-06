@@ -4,8 +4,10 @@ const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 
 const connectDB = require("./utils/db");
+const { getDatabaseErrorMessage } = require("./utils/dbError");
 
 const app = express();
+const isDemoAuthEnabled = () => String(process.env.DEMO_AUTH_ENABLED || "false").toLowerCase() === "true";
 
 /* =========================
    CORS
@@ -16,8 +18,9 @@ const allowedOrigins = [
   "http://127.0.0.1:5173",
   "http://localhost:5174",
   "http://127.0.0.1:5174",
-  process.env.FRONTEND_URL
-].filter(Boolean);
+  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+  ...(process.env.FRONTEND_URL || "").split(",")
+].map((origin) => origin?.trim()).filter(Boolean);
 
 const isLocalDevOrigin = (origin) => {
   try {
@@ -63,12 +66,33 @@ app.use(express.json());
    DATABASE
 ========================= */
 
-app.use(async (_req, _res, next) => {
+app.use(async (req, res, next) => {
+  const publicFallbackRoutes = [
+    req.method === "GET" && req.path === "/api/domes",
+    req.method === "GET" && req.path.startsWith("/api/domes/"),
+    req.method === "GET" && req.path.startsWith("/api/stalls/"),
+    req.method === "GET" && req.path === "/api/materials",
+    req.method === "POST" && req.path === "/api/aadhaar/submit",
+    req.method === "POST" && (req.path === "/api/bookings/create" || req.path === "/api/bookings"),
+    req.method === "GET" && req.path.startsWith("/api/bookings/user/"),
+    isDemoAuthEnabled() && req.method === "POST" && req.path === "/api/auth/login",
+    isDemoAuthEnabled() && req.method === "GET" && req.path === "/api/admin/dashboard/stats"
+  ];
+
+  if (publicFallbackRoutes.some(Boolean)) {
+    return next();
+  }
+
   try {
     await connectDB();
     next();
   } catch (error) {
-    next(error);
+    console.error("Database middleware error:", error);
+
+    return res.status(503).json({
+      success: false,
+      message: getDatabaseErrorMessage(error)
+    });
   }
 });
 

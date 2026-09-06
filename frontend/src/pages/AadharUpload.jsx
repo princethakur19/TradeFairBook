@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import api from "../api/axios";
+import { rememberFallbackBooking } from "../services/bookingService";
 import { getLoggedInUserId } from "../utils/auth";
 import { DEFAULT_INCLUDED_MATERIALS, getGrandTotal } from "../utils/bookingMaterials";
 import "../styles/aadharUpload.css";
@@ -175,7 +176,7 @@ const AadharUpload = () => {
         throw new Error("Aadhaar verification ID missing in response");
       }
 
-      await api.post("/bookings/create", {
+      const bookingRes = await api.post("/bookings/create", {
         stallIds: selectedStallIds,
         aadhaarVerificationId,
         status: "PENDING",
@@ -183,6 +184,7 @@ const AadharUpload = () => {
         extraMaterials,
         extraMaterialTotal
       });
+      rememberFallbackBooking(bookingRes.data);
 
       navigate("/my-bookings", {
         state: {

@@ -3,6 +3,7 @@ require("dotenv").config();
 const mongoose = require("mongoose");
 const Dome = require("../models/Dome");
 const Stall = require("../models/Stall");
+const { normalizeMongoUri } = require("../utils/db");
 
 const DEFAULT_LAYOUT = {
   top: 5,
@@ -67,7 +68,7 @@ const run = async () => {
     throw new Error("MONGO_URI is missing");
   }
 
-  await mongoose.connect(process.env.MONGO_URI);
+  await mongoose.connect(normalizeMongoUri(process.env.MONGO_URI));
 
   const domes = await Dome.find().select("_id domeName").lean();
   let createdCount = 0;

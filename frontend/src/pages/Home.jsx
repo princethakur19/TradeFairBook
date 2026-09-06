@@ -5,6 +5,7 @@ import Footer from "../components/layout/Footer";
 import HowItWorks from "../components/home/HowItWorks";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { getAllDomes } from "../services/domeService";
+import { defaultDomes } from "../data/defaultDomes";
 import { hasValidSession, setRedirectAfterLogin } from "../utils/auth";
 
 import "../styles/layout.css";
@@ -35,7 +36,8 @@ const Home = () => {
         setDomes(domeList);
       } catch (error) {
         console.error("Error fetching domes:", error);
-        setDomeError("Failed to load domes. Please try again.");
+        setDomes(defaultDomes);
+        setDomeError("");
       } finally {
         setLoadingDomes(false);
       }

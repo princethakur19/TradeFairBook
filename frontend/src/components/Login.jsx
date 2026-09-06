@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import {
   clearRedirectAfterLogin,
+  clearAuthStorage,
   getRedirectAfterLogin,
   persistAuthSession,
 } from "../utils/auth";
@@ -22,6 +23,7 @@ const Login = () => {
     e.preventDefault();
     setError("");
     setLoading(true);
+    clearAuthStorage();
 
     if (!email || !password) {
       setError("Please fill all fields");

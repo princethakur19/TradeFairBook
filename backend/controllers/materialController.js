@@ -1,5 +1,9 @@
 const Material = require("../models/Material");
 const Dome = require("../models/Dome");
+const connectDB = require("../utils/db");
+const { getDatabaseErrorMessage } = require("../utils/dbError");
+const { buildDefaultMaterialsForDome } = require("../data/defaultMaterials");
+const { isFallbackDataEnabled } = require("../utils/fallbackMode");
 
 exports.createMaterial = async (req, res) => {
   try {
@@ -73,13 +77,26 @@ exports.createMaterial = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: getDatabaseErrorMessage(error)
     });
   }
 };
 
 exports.getAllMaterials = async (_req, res) => {
   try {
+    if (_req.query?.dome && isFallbackDataEnabled()) {
+      const materials = buildDefaultMaterialsForDome(_req.query.dome);
+
+      return res.status(200).json({
+        success: true,
+        count: materials.length,
+        data: materials,
+        fallback: true
+      });
+    }
+
+    await connectDB();
+
     const isAdminUser = ["ADMIN", "SUPER_ADMIN"].includes(String(_req.user?.role || "").toUpperCase());
     const filters = {};
 
@@ -105,9 +122,20 @@ exports.getAllMaterials = async (_req, res) => {
       data: materials
     });
   } catch (error) {
-    return res.status(500).json({
+    if (_req.query?.dome) {
+      const materials = buildDefaultMaterialsForDome(_req.query.dome);
+
+      return res.status(200).json({
+        success: true,
+        count: materials.length,
+        data: materials,
+        fallback: true
+      });
+    }
+
+    return res.status(503).json({
       success: false,
-      message: error.message
+      message: getDatabaseErrorMessage(error)
     });
   }
 };
@@ -203,7 +231,7 @@ exports.updateMaterial = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: getDatabaseErrorMessage(error)
     });
   }
 };
@@ -226,7 +254,7 @@ exports.deleteMaterial = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: getDatabaseErrorMessage(error)
     });
   }
 };

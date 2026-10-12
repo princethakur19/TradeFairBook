@@ -23,6 +23,8 @@ const DomeReport = () => {
   const [selectedDomeId, setSelectedDomeId] = useState("");
   const [report, setReport] = useState(null);
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   // Fetch all domes
   useEffect(() => {
@@ -30,14 +32,20 @@ const DomeReport = () => {
       try {
         const res = await api.get("/domes");
 
-        setDomes(res.data.data);
+        const domeList = Array.isArray(res.data?.data) ? res.data.data : [];
+        setDomes(domeList);
 
-        if (res.data.data.length > 0) {
-        setSelectedDomeId(res.data.data[0]._id);
-      }
+        if (domeList.length > 0) {
+          setSelectedDomeId(domeList[0]._id);
+        } else {
+          setLoading(false);
+          setError("No domes found.");
+        }
 
       } catch (error) {
         console.error("Error fetching domes:", error);
+        setLoading(false);
+        setError(error.response?.data?.message || "Failed to load domes.");
       }
     };
 
@@ -50,18 +58,42 @@ const DomeReport = () => {
 
     const fetchReport = async () => {
       try {
+        setLoading(true);
+        setError("");
         const res = await api.get(`/reports/${selectedDomeId}`);
         setReport(res.data);
       } catch (error) {
         console.error("Error fetching report:", error);
+        setReport(null);
+        setError(error.response?.data?.message || "Failed to load dome report.");
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchReport();
   }, [selectedDomeId]);
 
-  if (!report) {
+  if (loading) {
     return <LoadingSpinner label="Loading report..." />;
+  }
+
+  if (error) {
+    return (
+      <div className="report-card">
+        <h2 className="report-title">Dome Report</h2>
+        <p className="manage-feedback manage-feedback-error">{error}</p>
+      </div>
+    );
+  }
+
+  if (!report) {
+    return (
+      <div className="report-card">
+        <h2 className="report-title">Dome Report</h2>
+        <p className="empty-table-msg">No report data available.</p>
+      </div>
+    );
   }
 
   const filteredBookings =

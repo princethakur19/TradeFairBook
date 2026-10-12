@@ -1,6 +1,8 @@
 const Booking = require("../models/Booking");
 const Stall = require("../models/Stall");
+const { getAllFallbackBookings } = require("../data/fallbackBookings");
 const { getDatabaseErrorMessage } = require("../utils/dbError");
+const { isFallbackDataEnabled } = require("../utils/fallbackMode");
 
 const BOOKING_STATUSES = ["PENDING", "APPROVED", "PAID", "REJECTED", "CANCELLED", "REFUNDED"];
 const ACTIVE_BOOKING_STATUSES = ["PENDING", "APPROVED", "PAID"];
@@ -48,6 +50,32 @@ exports.getAdminBookings = async (req, res) => {
 
     if (dome && dome !== "ALL") {
       filter.dome = dome;
+    }
+
+    if (isFallbackDataEnabled() && req.user?.demo) {
+      const allBookings = getAllFallbackBookings();
+      const filteredBookings = allBookings.filter((booking) => {
+        const matchesStatus = !filter.status
+          || (Array.isArray(filter.status?.$in)
+            ? filter.status.$in.includes(String(booking.status || "").toUpperCase())
+            : String(booking.status || "").toUpperCase() === filter.status);
+        const bookingDomeId = String(booking.dome?._id || booking.dome || "");
+        const matchesDome = !filter.dome || bookingDomeId === String(filter.dome);
+
+        return matchesStatus && matchesDome;
+      });
+      const pagedBookings = filteredBookings.slice(skip, skip + limit);
+
+      return res.status(200).json({
+        success: true,
+        page,
+        limit,
+        total: filteredBookings.length,
+        totalPages: Math.max(Math.ceil(filteredBookings.length / limit), 1),
+        count: pagedBookings.length,
+        data: pagedBookings,
+        fallback: true
+      });
     }
 
     const [total, bookings] = await Promise.all([

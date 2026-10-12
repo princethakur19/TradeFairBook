@@ -1,6 +1,11 @@
 const Stall = require("../models/Stall");
 const Booking = require("../models/Booking");
 const mongoose = require("mongoose");
+const defaultDomes = require("../data/defaultDomes");
+const { buildDefaultStallsForDome } = require("../data/defaultStalls");
+const { getAllFallbackBookings } = require("../data/fallbackBookings");
+const { isFallbackDataEnabled } = require("../utils/fallbackMode");
+const { getDatabaseErrorMessage } = require("../utils/dbError");
 
 const ACTIVE_BOOKING_STATUSES = ["PENDING", "APPROVED", "PAID"];
 const REVENUE_BOOKING_STATUSES = ["PAID"];
@@ -10,6 +15,38 @@ const PAYMENT_CONFIRMED_STATUSES = ["PAID"];
 exports.getDomeReport = async (req, res) => {
   try {
     const domeId = req.params.domeId;
+
+    if (isFallbackDataEnabled()) {
+      const fallbackDome = defaultDomes.find((dome) => dome._id === domeId);
+      const stalls = fallbackDome ? buildDefaultStallsForDome(domeId) : [];
+      const bookings = getAllFallbackBookings().filter((booking) => (
+        String(booking.dome?._id || booking.dome || "") === domeId
+      ));
+      const bookedStallIds = new Set(
+        bookings
+          .filter((booking) => ACTIVE_BOOKING_STATUSES.includes(String(booking.status || "").toUpperCase()))
+          .map((booking) => String(booking.stall?._id || booking.stall || ""))
+      );
+      const totalRevenue = bookings
+        .filter((booking) => REVENUE_BOOKING_STATUSES.includes(String(booking.status || "").toUpperCase()))
+        .reduce((sum, booking) => sum + Number(booking.grandTotal ?? booking.amount ?? 0), 0);
+
+      return res.json({
+        totalStalls: stalls.length,
+        bookedStalls: bookedStallIds.size,
+        availableStalls: Math.max(stalls.length - bookedStallIds.size, 0),
+        paymentPendingCount: bookings.filter((booking) => (
+          PAYMENT_PENDING_STATUSES.includes(String(booking.status || "").toUpperCase())
+        )).length,
+        paymentConfirmedCount: bookings.filter((booking) => (
+          PAYMENT_CONFIRMED_STATUSES.includes(String(booking.status || "").toUpperCase())
+        )).length,
+        totalRevenue,
+        bookings,
+        fallback: true
+      });
+    }
+
     const domeObjectId = new mongoose.Types.ObjectId(domeId);
 
     const [
@@ -71,6 +108,6 @@ exports.getDomeReport = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(503).json({ message: getDatabaseErrorMessage(error) });
   }
 };

@@ -72,11 +72,13 @@ app.use(async (req, res, next) => {
     req.method === "GET" && req.path.startsWith("/api/domes/"),
     req.method === "GET" && req.path.startsWith("/api/stalls/"),
     req.method === "GET" && req.path === "/api/materials",
+    req.method === "GET" && req.path.startsWith("/api/reports/"),
     req.method === "POST" && req.path === "/api/aadhaar/submit",
     req.method === "POST" && (req.path === "/api/bookings/create" || req.path === "/api/bookings"),
     req.method === "GET" && req.path.startsWith("/api/bookings/user/"),
     isDemoAuthEnabled() && req.method === "POST" && req.path === "/api/auth/login",
-    isDemoAuthEnabled() && req.method === "GET" && req.path === "/api/admin/dashboard/stats"
+    isDemoAuthEnabled() && req.method === "GET" && req.path === "/api/admin/dashboard/stats",
+    isDemoAuthEnabled() && req.method === "GET" && req.path === "/api/admin/bookings"
   ];
 
   if (publicFallbackRoutes.some(Boolean)) {

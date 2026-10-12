@@ -3,7 +3,17 @@ const Dome = require("../models/Dome");
 const connectDB = require("../utils/db");
 const { getDatabaseErrorMessage } = require("../utils/dbError");
 const { buildDefaultMaterialsForDome } = require("../data/defaultMaterials");
+const defaultDomes = require("../data/defaultDomes");
 const { isFallbackDataEnabled } = require("../utils/fallbackMode");
+
+const attachFallbackDome = (material, dome) => ({
+  ...material,
+  dome: dome || material.dome
+});
+
+const buildAllFallbackMaterials = () => defaultDomes.flatMap((dome) =>
+  buildDefaultMaterialsForDome(dome._id).map((material) => attachFallbackDome(material, dome))
+);
 
 exports.createMaterial = async (req, res) => {
   try {
@@ -84,8 +94,13 @@ exports.createMaterial = async (req, res) => {
 
 exports.getAllMaterials = async (_req, res) => {
   try {
-    if (_req.query?.dome && isFallbackDataEnabled()) {
-      const materials = buildDefaultMaterialsForDome(_req.query.dome);
+    if (isFallbackDataEnabled()) {
+      const selectedDome = _req.query?.dome
+        ? defaultDomes.find((dome) => dome._id === _req.query.dome)
+        : null;
+      const materials = _req.query?.dome
+        ? buildDefaultMaterialsForDome(_req.query.dome).map((material) => attachFallbackDome(material, selectedDome))
+        : buildAllFallbackMaterials();
 
       return res.status(200).json({
         success: true,

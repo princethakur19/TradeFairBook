@@ -14,8 +14,10 @@ const saveFallbackBookings = (userId, bookings) => {
 };
 
 const getFallbackBookings = (userId) => clone(fallbackBookingsByUser.get(String(userId || "")) || []);
+const getAllFallbackBookings = () => clone([...fallbackBookingsByUser.values()].flat());
 
 module.exports = {
+  getAllFallbackBookings,
   saveFallbackBookings,
   getFallbackBookings
 };

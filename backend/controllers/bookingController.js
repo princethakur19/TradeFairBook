@@ -12,11 +12,13 @@ const {
   updateFallbackBooking
 } = require("../data/fallbackBookings");
 const connectDB = require("../utils/db");
+const {
+  ACTIVE_BOOKING_STATUSES,
+  TERMINAL_BOOKING_STATUSES
+} = require("../utils/bookingStatus");
 const { isFallbackDataEnabled } = require("../utils/fallbackMode");
 
 const BOOKING_STATUSES = ["PENDING", "APPROVED", "PAID", "REJECTED", "CANCELLED", "REFUNDED"];
-const ACTIVE_BOOKING_STATUSES = ["PENDING", "APPROVED", "PAID"];
-const TERMINAL_BOOKING_STATUSES = ["REJECTED", "CANCELLED", "REFUNDED"];
 const REFUND_STATUSES = ["NONE", "REQUESTED", "REJECTED", "REFUNDED"];
 const DEFAULT_REFUND_DEDUCTION_PERCENT = 10;
 const DEFAULT_INCLUDED_MATERIALS = Object.freeze([
@@ -376,6 +378,30 @@ exports.createBooking = async (req, res) => {
       });
     }
 
+    const claimedStalls = await Stall.updateMany(
+      {
+        _id: { $in: normalizedStallIds },
+        status: "AVAILABLE"
+      },
+      { $set: { status: "BOOKED" } }
+    );
+
+    if (claimedStalls.modifiedCount !== normalizedStallIds.length) {
+      const unavailableStalls = await Stall.find({
+        _id: { $in: normalizedStallIds },
+        status: { $ne: "AVAILABLE" }
+      }).select("_id");
+      const blockedStalls = unavailableStalls.map((stallDoc) => String(stallDoc._id));
+      return res.status(400).json({
+        success: false,
+        message:
+          blockedStalls.length === 1
+            ? "Selected stall is already booked"
+            : "Some selected stalls are already booked",
+        bookedStallIds: blockedStalls
+      });
+    }
+
     const existingBookings = await Booking.find({
       stall: { $in: normalizedStallIds },
       status: { $in: ACTIVE_BOOKING_STATUSES }
@@ -383,6 +409,16 @@ exports.createBooking = async (req, res) => {
 
     if (existingBookings.length) {
       const blockedIds = new Set(existingBookings.map((booking) => String(booking.stall)));
+      const freeClaimedStalls = normalizedStallIds.filter((stallId) => !blockedIds.has(stallId));
+
+      await Stall.updateMany(
+        { _id: { $in: freeClaimedStalls } },
+        { $set: { status: "AVAILABLE" } }
+      );
+      await Stall.updateMany(
+        { _id: { $in: [...blockedIds] } },
+        { $set: { status: "BOOKED" } }
+      );
       const blockedStalls = normalizedStallIds.filter((stallId) => blockedIds.has(stallId));
       return res.status(400).json({
         success: false,
@@ -419,8 +455,16 @@ exports.createBooking = async (req, res) => {
       };
     });
 
-    const createdBookings = await Booking.insertMany(bookingsPayload);
-    await Promise.all(createdBookings.map((booking) => syncStallStatusForBooking(booking._id)));
+    let createdBookings;
+    try {
+      createdBookings = await Booking.insertMany(bookingsPayload);
+    } catch (error) {
+      await Stall.updateMany(
+        { _id: { $in: normalizedStallIds } },
+        { $set: { status: "AVAILABLE" } }
+      );
+      throw error;
+    }
 
     const createdBookingIds = createdBookings.map((booking) => booking._id);
     const populatedBookings = await Booking.find({ _id: { $in: createdBookingIds } })

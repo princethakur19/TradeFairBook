@@ -69,6 +69,10 @@ const loginWithDemoUser = ({ email, password, role }) => {
   };
 };
 
+const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
+const normalizeRequiredText = (value) => String(value || "").trim();
+const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
 const loginWithFallbackUser = ({ email, password, role }, error) => {
   const normalizedRequestedRole = normalizeRole(role) || "USER";
   const normalizedEmail = String(email || "").trim().toLowerCase();
@@ -104,7 +108,23 @@ const loginWithFallbackUser = ({ email, password, role }, error) => {
 // REGISTER (ONLY USER)
 const register = async (req, res) => {
   try {
-    const { fullname, company, email, phone, password } = req.body;
+    const fullname = normalizeRequiredText(req.body?.fullname);
+    const company = normalizeRequiredText(req.body?.company);
+    const email = normalizeEmail(req.body?.email);
+    const phone = normalizeRequiredText(req.body?.phone);
+    const password = String(req.body?.password || "");
+
+    if (!fullname || !company || !email || !phone || !password) {
+      return res.status(400).json({ msg: "Please fill all required fields" });
+    }
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ msg: "Please enter a valid email address" });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ msg: "Password must be at least 6 characters long" });
+    }
 
     await connectDB();
 
@@ -127,6 +147,16 @@ const register = async (req, res) => {
     return res.status(201).json({ msg: "User registered successfully" });
   } catch (error) {
     console.error("Register Error:", error);
+
+    if (error.code === 11000) {
+      return res.status(400).json({ msg: "Email already exists" });
+    }
+
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        msg: Object.values(error.errors || {})[0]?.message || "Please check your registration details"
+      });
+    }
 
     return res.status(503).json({
       msg: getDatabaseErrorMessage(error)

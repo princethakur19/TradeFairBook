@@ -3,14 +3,28 @@ const assert = require("node:assert/strict");
 
 const controllerPath = require.resolve("../controllers/stallController");
 const stallModelPath = require.resolve("../models/Stall");
+const bookingModelPath = require.resolve("../models/Booking");
+const dbPath = require.resolve("../utils/db");
 
-const loadController = (stallMock) => {
+const loadController = (stallMock, bookingMock = { distinct: async () => [] }) => {
   delete require.cache[controllerPath];
+  require.cache[dbPath] = {
+    id: dbPath,
+    filename: dbPath,
+    loaded: true,
+    exports: async () => {}
+  };
   require.cache[stallModelPath] = {
     id: stallModelPath,
     filename: stallModelPath,
     loaded: true,
     exports: stallMock
+  };
+  require.cache[bookingModelPath] = {
+    id: bookingModelPath,
+    filename: bookingModelPath,
+    loaded: true,
+    exports: bookingMock
   };
 
   return require(controllerPath);
@@ -87,6 +101,55 @@ test("getAllStalls returns populated stall list", async () => {
   assert.equal(res.statusCode, 200);
   assert.equal(res.body.count, 2);
   assert.deepEqual(res.body.data, stalls);
+});
+
+test("getAllStalls overlays active booking status", async () => {
+  const stalls = [
+    {
+      _id: "stall-1",
+      stallNumber: "B-1",
+      status: "AVAILABLE",
+      toObject() {
+        return { _id: this._id, stallNumber: this.stallNumber, status: this.status };
+      }
+    },
+    {
+      _id: "stall-2",
+      stallNumber: "B-2",
+      status: "AVAILABLE",
+      toObject() {
+        return { _id: this._id, stallNumber: this.stallNumber, status: this.status };
+      }
+    }
+  ];
+  const controller = loadController(
+    {
+      find() {
+        return {
+          populate() {
+            return Promise.resolve(stalls);
+          }
+        };
+      }
+    },
+    {
+      async distinct(field, query) {
+        assert.equal(field, "stall");
+        assert.deepEqual(query, {
+          stall: { $in: ["stall-1", "stall-2"] },
+          status: { $in: ["PENDING", "APPROVED", "PAID"] }
+        });
+        return ["stall-2"];
+      }
+    }
+  );
+
+  const res = createResponse();
+  await controller.getAllStalls({}, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.data[0].status, "AVAILABLE");
+  assert.equal(res.body.data[1].status, "BOOKED");
 });
 
 test("getStallsByDome filters by dome and sorts oldest to newest", async () => {

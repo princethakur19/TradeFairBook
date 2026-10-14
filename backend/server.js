@@ -8,6 +8,9 @@ const { getDatabaseErrorMessage } = require("./utils/dbError");
 
 const app = express();
 const isDemoAuthEnabled = () => String(process.env.DEMO_AUTH_ENABLED || "false").toLowerCase() === "true";
+const isAdminBookingStatusAction = (req) =>
+  req.method === "PUT" &&
+  /^\/api\/admin\/bookings\/[^/]+\/(?:approve|reject|cancel)$/.test(req.path);
 
 /* =========================
    CORS
@@ -78,7 +81,8 @@ app.use(async (req, res, next) => {
     req.method === "GET" && req.path.startsWith("/api/bookings/user/"),
     isDemoAuthEnabled() && req.method === "POST" && req.path === "/api/auth/login",
     isDemoAuthEnabled() && req.method === "GET" && req.path === "/api/admin/dashboard/stats",
-    isDemoAuthEnabled() && req.method === "GET" && req.path === "/api/admin/bookings"
+    isDemoAuthEnabled() && req.method === "GET" && req.path === "/api/admin/bookings",
+    isDemoAuthEnabled() && isAdminBookingStatusAction(req)
   ];
 
   if (publicFallbackRoutes.some(Boolean)) {

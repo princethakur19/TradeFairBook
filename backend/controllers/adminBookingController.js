@@ -1,6 +1,6 @@
 const Booking = require("../models/Booking");
 const Stall = require("../models/Stall");
-const { getAllFallbackBookings } = require("../data/fallbackBookings");
+const { getAllFallbackBookings, updateFallbackBooking } = require("../data/fallbackBookings");
 const { getDatabaseErrorMessage } = require("../utils/dbError");
 const { isFallbackDataEnabled } = require("../utils/fallbackMode");
 
@@ -107,6 +107,40 @@ exports.getAdminBookings = async (req, res) => {
 
 const updateBookingStatus = async (req, res, status, actionLabel) => {
   try {
+    if (isFallbackDataEnabled() && req.user?.demo) {
+      const updatedFallbackBooking = updateFallbackBooking(req.params.id, (booking) => {
+        const normalizedCurrentStatus = String(booking.status || "").toUpperCase();
+
+        if (normalizedCurrentStatus === "PAID" || normalizedCurrentStatus === "REFUNDED") {
+          return null;
+        }
+
+        return { status };
+      });
+
+      if (!updatedFallbackBooking) {
+        return res.status(404).json({
+          success: false,
+          message: "Booking not found"
+        });
+      }
+
+      const normalizedUpdatedStatus = String(updatedFallbackBooking.status || "").toUpperCase();
+      if (normalizedUpdatedStatus === "PAID" || normalizedUpdatedStatus === "REFUNDED") {
+        return res.status(400).json({
+          success: false,
+          message: "Paid or refunded bookings cannot be modified from this action"
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: `Booking ${actionLabel} successfully`,
+        data: updatedFallbackBooking,
+        fallback: true
+      });
+    }
+
     const booking = await Booking.findById(req.params.id);
 
     if (!booking) {
@@ -124,9 +158,11 @@ const updateBookingStatus = async (req, res, status, actionLabel) => {
       });
     }
 
-    booking.status = status;
-    await booking.save();
-    await syncStallStatusForBooking(booking);
+    if (normalizedCurrentStatus !== status) {
+      booking.status = status;
+      await booking.save();
+      await syncStallStatusForBooking(booking);
+    }
 
     const updatedBooking = await populateBookingQuery(Booking.findById(booking._id));
 

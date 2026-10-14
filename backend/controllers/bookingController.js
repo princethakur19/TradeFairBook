@@ -6,7 +6,11 @@ const Material = require("../models/Material");
 const defaultDomes = require("../data/defaultDomes");
 const { buildDefaultStallsForDome } = require("../data/defaultStalls");
 const { buildDefaultMaterialsForDome } = require("../data/defaultMaterials");
-const { getFallbackBookings, saveFallbackBookings } = require("../data/fallbackBookings");
+const {
+  getFallbackBookings,
+  saveFallbackBookings,
+  updateFallbackBooking
+} = require("../data/fallbackBookings");
 const connectDB = require("../utils/db");
 const { isFallbackDataEnabled } = require("../utils/fallbackMode");
 
@@ -245,6 +249,20 @@ const createRazorpaySignature = (orderId, paymentId) =>
     .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
     .update(`${orderId}|${paymentId}`)
     .digest("hex");
+
+const createFallbackPayment = (booking) => {
+  const timestamp = Date.now();
+  const orderId = `order_fallback_${String(booking._id).slice(-8)}_${timestamp}`;
+  const paymentId = `pay_fallback_${timestamp}`;
+
+  return {
+    paymentOrderId: orderId,
+    paymentId,
+    paymentSignature: `fallback_${crypto.randomBytes(8).toString("hex")}`,
+    paidAt: new Date().toISOString(),
+    status: "PAID"
+  };
+};
 
 /* ===============================
    CREATE BOOKING
@@ -514,6 +532,55 @@ exports.getAllBookings = async (_req, res) => {
 ================================= */
 exports.createPaymentOrder = async (req, res) => {
   try {
+    if (isFallbackDataEnabled() && req.user?.demo) {
+      const userFallbackBookings = getFallbackBookings(req.user?.id);
+      const fallbackBooking = userFallbackBookings.find(
+        (booking) => String(booking?._id || "") === String(req.params.id || "")
+      );
+
+      if (!fallbackBooking) {
+        return res.status(404).json({
+          success: false,
+          message: "Booking not found"
+        });
+      }
+
+      if (!canManageAllBookings(req.user?.role) && getBookingOwnerId(fallbackBooking) !== String(req.user?.id || "")) {
+        return res.status(403).json({
+          success: false,
+          message: "You are not allowed to pay for this booking"
+        });
+      }
+
+      const currentStatus = String(fallbackBooking.status || "").toUpperCase();
+      if (currentStatus === "PAID") {
+        return res.status(200).json({
+          success: true,
+          checkoutRequired: false,
+          message: "Payment already completed for this booking",
+          data: fallbackBooking,
+          fallback: true
+        });
+      }
+
+      if (currentStatus !== "APPROVED") {
+        return res.status(400).json({
+          success: false,
+          message: "Only approved bookings can proceed to payment"
+        });
+      }
+
+      const updatedBooking = updateFallbackBooking(req.params.id, (booking) => createFallbackPayment(booking));
+
+      return res.status(200).json({
+        success: true,
+        checkoutRequired: false,
+        message: "Payment completed successfully",
+        data: updatedBooking,
+        fallback: true
+      });
+    }
+
     const booking = await Booking.findById(req.params.id).populate(bookingPopulate);
 
     if (!booking) {

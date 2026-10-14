@@ -5,12 +5,16 @@ require("dotenv").config({ path: path.join(__dirname, ".env") });
 
 const connectDB = require("./utils/db");
 const { getDatabaseErrorMessage } = require("./utils/dbError");
+const { isFallbackDataEnabled } = require("./utils/fallbackMode");
 
 const app = express();
 const isDemoAuthEnabled = () => String(process.env.DEMO_AUTH_ENABLED || "false").toLowerCase() === "true";
 const isAdminBookingStatusAction = (req) =>
   req.method === "PUT" &&
   /^\/api\/admin\/bookings\/[^/]+\/(?:approve|reject|cancel)$/.test(req.path);
+const isBookingPaymentAction = (req) =>
+  req.method === "POST" &&
+  /^\/api\/bookings\/[^/]+\/payment\/(?:order|verify)$/.test(req.path);
 
 /* =========================
    CORS
@@ -82,7 +86,8 @@ app.use(async (req, res, next) => {
     isDemoAuthEnabled() && req.method === "POST" && req.path === "/api/auth/login",
     isDemoAuthEnabled() && req.method === "GET" && req.path === "/api/admin/dashboard/stats",
     isDemoAuthEnabled() && req.method === "GET" && req.path === "/api/admin/bookings",
-    isDemoAuthEnabled() && isAdminBookingStatusAction(req)
+    isDemoAuthEnabled() && isAdminBookingStatusAction(req),
+    isFallbackDataEnabled() && isBookingPaymentAction(req)
   ];
 
   if (publicFallbackRoutes.some(Boolean)) {

@@ -250,20 +250,6 @@ const createRazorpaySignature = (orderId, paymentId) =>
     .update(`${orderId}|${paymentId}`)
     .digest("hex");
 
-const createFallbackPayment = (booking) => {
-  const timestamp = Date.now();
-  const orderId = `order_fallback_${String(booking._id).slice(-8)}_${timestamp}`;
-  const paymentId = `pay_fallback_${timestamp}`;
-
-  return {
-    paymentOrderId: orderId,
-    paymentId,
-    paymentSignature: `fallback_${crypto.randomBytes(8).toString("hex")}`,
-    paidAt: new Date().toISOString(),
-    status: "PAID"
-  };
-};
-
 /* ===============================
    CREATE BOOKING
 ================================= */
@@ -570,13 +556,23 @@ exports.createPaymentOrder = async (req, res) => {
         });
       }
 
-      const updatedBooking = updateFallbackBooking(req.params.id, (booking) => createFallbackPayment(booking));
+      const order = await createRazorpayOrder(fallbackBooking);
+      const updatedBooking = updateFallbackBooking(req.params.id, () => ({
+        paymentOrderId: order.id
+      }));
 
       return res.status(200).json({
         success: true,
-        checkoutRequired: false,
-        message: "Payment completed successfully",
-        data: updatedBooking,
+        keyId: process.env.RAZORPAY_KEY_ID,
+        orderId: order.id,
+        amount: order.amount,
+        currency: order.currency || "INR",
+        bookingId: String(updatedBooking?._id || fallbackBooking._id),
+        bookingTitle: `${fallbackBooking?.dome?.domeName || "TradeFairBook"} - Stall ${fallbackBooking?.stall?.stallNumber || "N/A"}`,
+        customer: {
+          name: req.user?.fullname || req.user?.name || "",
+          email: req.user?.email || ""
+        },
         fallback: true
       });
     }
@@ -652,6 +648,74 @@ exports.verifyPayment = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Payment verification details are required"
+      });
+    }
+
+    if (isFallbackDataEnabled() && req.user?.demo) {
+      const userFallbackBookings = getFallbackBookings(req.user?.id);
+      const fallbackBooking = userFallbackBookings.find(
+        (booking) => String(booking?._id || "") === String(req.params.id || "")
+      );
+
+      if (!fallbackBooking) {
+        return res.status(404).json({
+          success: false,
+          message: "Booking not found"
+        });
+      }
+
+      if (!canManageAllBookings(req.user?.role) && getBookingOwnerId(fallbackBooking) !== String(req.user?.id || "")) {
+        return res.status(403).json({
+          success: false,
+          message: "You are not allowed to verify payment for this booking"
+        });
+      }
+
+      const currentStatus = String(fallbackBooking.status || "").toUpperCase();
+      if (currentStatus === "PAID") {
+        return res.status(200).json({
+          success: true,
+          message: "Payment already verified for this booking",
+          data: fallbackBooking,
+          fallback: true
+        });
+      }
+
+      if (currentStatus !== "APPROVED") {
+        return res.status(400).json({
+          success: false,
+          message: "Only approved bookings can be marked as paid"
+        });
+      }
+
+      if (fallbackBooking.paymentOrderId && fallbackBooking.paymentOrderId !== orderId) {
+        return res.status(400).json({
+          success: false,
+          message: "Payment order does not match this booking"
+        });
+      }
+
+      const expectedSignature = createRazorpaySignature(orderId, paymentId);
+      if (expectedSignature !== paymentSignature) {
+        return res.status(400).json({
+          success: false,
+          message: "Payment verification failed"
+        });
+      }
+
+      const updatedBooking = updateFallbackBooking(req.params.id, () => ({
+        status: "PAID",
+        paymentOrderId: orderId,
+        paymentId,
+        paymentSignature,
+        paidAt: new Date().toISOString()
+      }));
+
+      return res.status(200).json({
+        success: true,
+        message: "Payment completed successfully",
+        data: updatedBooking,
+        fallback: true
       });
     }
 

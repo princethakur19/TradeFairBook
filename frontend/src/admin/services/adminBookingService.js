@@ -18,6 +18,18 @@ const readLocalFallbackBookings = () => {
   }
 };
 
+const updateLocalFallbackBooking = (id, updates) => {
+  try {
+    const current = JSON.parse(sessionStorage.getItem("fallbackBookings") || "[]");
+    if (!Array.isArray(current)) return;
+    sessionStorage.setItem("fallbackBookings", JSON.stringify(current.map((booking) =>
+      String(booking._id) === String(id) ? { ...booking, ...updates, updatedAt: new Date().toISOString() } : booking
+    )));
+  } catch {
+    // Local demo bookings are optional; the server response remains authoritative.
+  }
+};
+
 export const getAdminBookings = async (params = {}) => {
   const response = await api.get("/admin/bookings", { params });
   const result = response.data;
@@ -55,25 +67,30 @@ export const getAdminBookings = async (params = {}) => {
 
 export const approveBooking = async (id) => {
   const response = await api.put(`/admin/bookings/${id}/approve`);
+  updateLocalFallbackBooking(id, { status: "APPROVED" });
   return response.data;
 };
 
 export const rejectBooking = async (id) => {
   const response = await api.put(`/admin/bookings/${id}/reject`);
+  updateLocalFallbackBooking(id, { status: "REJECTED" });
   return response.data;
 };
 
 export const cancelBooking = async (id) => {
   const response = await api.put(`/admin/bookings/${id}/cancel`);
+  updateLocalFallbackBooking(id, { status: "CANCELLED" });
   return response.data;
 };
 
 export const approveRefundRequest = async (id, note = "") => {
   const response = await api.put(`/admin/bookings/${id}/refund/approve`, { note });
+  updateLocalFallbackBooking(id, { status: "REFUNDED", refundStatus: "REFUNDED" });
   return response.data;
 };
 
 export const rejectRefundRequest = async (id, note = "") => {
   const response = await api.put(`/admin/bookings/${id}/refund/reject`, { note });
+  updateLocalFallbackBooking(id, { refundStatus: "REJECTED" });
   return response.data;
 };

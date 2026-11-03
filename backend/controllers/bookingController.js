@@ -4,9 +4,15 @@ const Stall = require("../models/Stall");
 const AadhaarVerification = require("../models/AadhaarVerification");
 const Material = require("../models/Material");
 const defaultDomes = require("../data/defaultDomes");
-const { buildDefaultStallsForDome } = require("../data/defaultStalls");
 const { buildDefaultMaterialsForDome } = require("../data/defaultMaterials");
-const { getFallbackBookings, saveFallbackBookings } = require("../data/fallbackBookings");
+const { getAllFallbackStalls, getFallbackStallById, updateFallbackStall } = require("../data/fallbackStalls");
+const {
+  getFallbackBookings,
+  getFallbackBookingById,
+  getAllFallbackBookings,
+  saveFallbackBookings,
+  updateFallbackBooking
+} = require("../data/fallbackBookings");
 const connectDB = require("../utils/db");
 const { isFallbackDataEnabled } = require("../utils/fallbackMode");
 
@@ -86,9 +92,55 @@ const distributeAmountAcrossBookings = (total, count) => {
   });
 };
 const getFallbackStallMap = () => new Map(
-  defaultDomes.flatMap((dome) => buildDefaultStallsForDome(dome._id))
-    .map((stall) => [String(stall._id), stall])
+  getAllFallbackStalls().map((stall) => [String(stall._id), stall])
 );
+
+const restoreFallbackBookingForPayment = (req) => {
+  const input = req.body?.fallbackBooking;
+  if (!input?._id || String(input.status).toUpperCase() !== "APPROVED") return null;
+
+  const ownerId = String(input.user?._id || input.user || "");
+  if (!ownerId || ownerId !== String(req.user?.id || "")) return null;
+
+  const stallId = String(input.stall?._id || input.stall || "");
+  const stall = getFallbackStallById(stallId);
+  if (!stall || !String(input._id).startsWith(`${stallId.slice(0, 20)}b`)) return null;
+
+  const domeId = String(stall.dome?._id || stall.dome || "");
+  const dome = defaultDomes.find((item) => item._id === domeId);
+  if (!dome) return null;
+
+  const materials = new Map(buildDefaultMaterialsForDome(domeId).map((item) => [String(item._id), item]));
+  const extraMaterials = (Array.isArray(input.extraMaterials) ? input.extraMaterials : []).map((item) => {
+    const material = materials.get(String(item.materialId || ""));
+    const quantity = toPositiveInteger(item.quantity);
+    if (!material || !quantity) return null;
+    const price = Number(material.price || 0);
+    return { materialId: material._id, name: material.name, price, quantity, subtotal: price * quantity };
+  }).filter(Boolean);
+  const extraMaterialTotal = extraMaterials.reduce((sum, item) => sum + item.subtotal, 0);
+  const extraMaterialShare = Math.min(
+    Math.max(0, Number(input.extraMaterialShare) || 0),
+    extraMaterialTotal
+  );
+  const stallPrice = Number(stall.price || 0);
+  const restored = {
+    ...input,
+    user: { _id: ownerId, fullname: req.user?.fullname || "", email: req.user?.email || "" },
+    stall,
+    dome,
+    stallPrice,
+    extraMaterials,
+    extraMaterialTotal,
+    extraMaterialShare,
+    amount: stallPrice + extraMaterialShare,
+    grandTotal: stallPrice + extraMaterialShare,
+    status: "APPROVED"
+  };
+  saveFallbackBookings(ownerId, [restored]);
+  updateFallbackStall(stallId, { status: "BOOKED" });
+  return restored;
+};
 const createFallbackBookingResponse = ({
   userId,
   user,
@@ -115,7 +167,7 @@ const createFallbackBookingResponse = ({
       .filter((item) => item.name && item.quantity > 0)
     : DEFAULT_INCLUDED_MATERIALS;
 
-  const domeId = String(selectedStalls[0].dome);
+  const domeId = String(selectedStalls[0].dome?._id || selectedStalls[0].dome);
   const fallbackMaterials = new Map(
     buildDefaultMaterialsForDome(domeId).map((material) => [String(material._id), material])
   );
@@ -149,7 +201,7 @@ const createFallbackBookingResponse = ({
   const bookings = selectedStalls.map((stall, index) => {
     const extraMaterialShare = distributedExtraShares[index] || 0;
     const stallPrice = Number(stall.price || 0);
-    const dome = defaultDomes.find((item) => item._id === String(stall.dome));
+    const dome = defaultDomes.find((item) => item._id === String(stall.dome?._id || stall.dome));
 
     return {
       _id: `${String(stall._id).slice(0, 20)}b${String(index + 1).padStart(3, "0")}`,
@@ -276,6 +328,20 @@ exports.createBooking = async (req, res) => {
 	    }
 
     if (isFallbackDataEnabled()) {
+      const occupiedStallIds = new Set(
+        getAllFallbackBookings()
+          .filter((booking) => ACTIVE_BOOKING_STATUSES.includes(normalizeStatus(booking.status)))
+          .map((booking) => String(booking.stall?._id || booking.stall))
+      );
+      const blockedStallIds = normalizedStallIds.filter((stallId) => occupiedStallIds.has(stallId));
+      if (blockedStallIds.length) {
+        return res.status(400).json({
+          success: false,
+          message: blockedStallIds.length === 1 ? "Selected stall is already booked" : "Some selected stalls are already booked",
+          bookedStallIds: blockedStallIds
+        });
+      }
+
       const fallbackResponse = createFallbackBookingResponse({
         userId,
         user: req.user,
@@ -287,6 +353,9 @@ exports.createBooking = async (req, res) => {
 
       if (fallbackResponse) {
         saveFallbackBookings(userId, fallbackResponse.bookings);
+        fallbackResponse.bookings.forEach((booking) =>
+          updateFallbackStall(booking.stall._id, { status: "BOOKED" })
+        );
         delete fallbackResponse.bookings;
 
         return res.status(201).json(fallbackResponse);
@@ -520,6 +589,36 @@ exports.getAllBookings = async (_req, res) => {
 ================================= */
 exports.createPaymentOrder = async (req, res) => {
   try {
+    if (isFallbackDataEnabled()) {
+      const booking = getFallbackBookingById(req.params.id) || restoreFallbackBookingForPayment(req);
+      if (!booking) {
+        return res.status(404).json({ success: false, message: "Booking not found" });
+      }
+      if (!canManageAllBookings(req.user?.role) && getBookingOwnerId(booking) !== String(req.user?.id || "")) {
+        return res.status(403).json({ success: false, message: "You are not allowed to pay for this booking" });
+      }
+      if (String(booking.status).toUpperCase() === "PAID") {
+        return res.status(400).json({ success: false, message: "Payment is already completed for this booking" });
+      }
+      if (String(booking.status).toUpperCase() !== "APPROVED") {
+        return res.status(400).json({ success: false, message: "Only approved bookings can proceed to payment" });
+      }
+
+      const order = await createRazorpayOrder(booking);
+      updateFallbackBooking(booking._id, { paymentOrderId: order.id });
+      return res.status(200).json({
+        success: true,
+        keyId: process.env.RAZORPAY_KEY_ID,
+        orderId: order.id,
+        amount: order.amount,
+        currency: order.currency || "INR",
+        bookingId: String(booking._id),
+        bookingTitle: `${booking.dome?.domeName || "TradeFairBook"} - Stall ${booking.stall?.stallNumber || "N/A"}`,
+        customer: { name: booking.user?.fullname || "", email: booking.user?.email || "" },
+        fallback: true
+      });
+    }
+
     const booking = await Booking.findById(req.params.id).populate(bookingPopulate);
 
     if (!booking) {
@@ -592,6 +691,38 @@ exports.verifyPayment = async (req, res) => {
         success: false,
         message: "Payment verification details are required"
       });
+    }
+
+    if (isFallbackDataEnabled()) {
+      const booking = getFallbackBookingById(req.params.id);
+      if (!booking) {
+        return res.status(404).json({ success: false, message: "Booking not found" });
+      }
+      if (!canManageAllBookings(req.user?.role) && getBookingOwnerId(booking) !== String(req.user?.id || "")) {
+        return res.status(403).json({ success: false, message: "You are not allowed to verify payment for this booking" });
+      }
+      if (String(booking.status).toUpperCase() === "PAID") {
+        return res.status(200).json({ success: true, message: "Payment already verified for this booking", data: booking });
+      }
+      if (String(booking.status).toUpperCase() !== "APPROVED") {
+        return res.status(400).json({ success: false, message: "Only approved bookings can be marked as paid" });
+      }
+      if (booking.paymentOrderId && booking.paymentOrderId !== orderId) {
+        return res.status(400).json({ success: false, message: "Payment order does not match this booking" });
+      }
+      if (!process.env.RAZORPAY_KEY_SECRET || createRazorpaySignature(orderId, paymentId) !== paymentSignature) {
+        return res.status(400).json({ success: false, message: "Payment verification failed" });
+      }
+
+      const updatedBooking = updateFallbackBooking(booking._id, {
+        status: "PAID",
+        paymentOrderId: orderId,
+        paymentId,
+        paymentSignature,
+        paidAt: new Date().toISOString()
+      });
+      if (booking.stall?._id) updateFallbackStall(booking.stall._id, { status: "BOOKED" });
+      return res.status(200).json({ success: true, message: "Payment completed successfully", data: updatedBooking, fallback: true });
     }
 
     const booking = await Booking.findById(req.params.id);
@@ -728,6 +859,30 @@ exports.updateBookingStatus = async (req, res) => {
 ================================= */
 exports.cancelBooking = async (req, res) => {
   try {
+    if (isFallbackDataEnabled()) {
+      const booking = getFallbackBookingById(req.params.id);
+      if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
+      const role = String(req.user?.role || "").toUpperCase();
+      if (!canManageAllBookings(role) && getBookingOwnerId(booking) !== String(req.user?.id || "")) {
+        return res.status(403).json({ success: false, message: "You are not allowed to cancel this booking" });
+      }
+      const bookingStatus = normalizeStatus(booking.status);
+      const refundStatus = getRefundStatus(booking);
+      if (bookingStatus === "REFUNDED") return res.status(400).json({ success: false, message: "This booking is already refunded" });
+      if (bookingStatus === "CANCELLED") return res.status(400).json({ success: false, message: "Booking is already cancelled" });
+      if (refundStatus === "REQUESTED") return res.status(400).json({ success: false, message: "Refund request is already pending for this booking" });
+
+      const wasPaymentCompleted = hasCompletedPayment(booking) || bookingStatus === "PAID";
+      const updatedBooking = updateFallbackBooking(booking._id, { status: "CANCELLED" });
+      if (booking.stall?._id) updateFallbackStall(booking.stall._id, { status: "AVAILABLE" });
+      return res.status(200).json({
+        success: true,
+        message: wasPaymentCompleted ? "Booking cancelled successfully. You can request refund now." : "Booking cancelled successfully",
+        data: updatedBooking,
+        fallback: true
+      });
+    }
+
     const booking = await Booking.findById(req.params.id);
 
     if (!booking) {
@@ -799,6 +954,37 @@ exports.cancelBooking = async (req, res) => {
 ================================= */
 exports.requestBookingRefund = async (req, res) => {
   try {
+    if (isFallbackDataEnabled()) {
+      const booking = getFallbackBookingById(req.params.id);
+      if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
+      const role = String(req.user?.role || "").toUpperCase();
+      if (!canManageAllBookings(role) && getBookingOwnerId(booking) !== String(req.user?.id || "")) {
+        return res.status(403).json({ success: false, message: "You are not allowed to request a refund for this booking" });
+      }
+      const bookingStatus = normalizeStatus(booking.status);
+      const refundStatus = getRefundStatus(booking);
+      if (bookingStatus === "REFUNDED" || refundStatus === "REFUNDED") return res.status(400).json({ success: false, message: "This booking is already refunded" });
+      if (!hasCompletedPayment(booking) && bookingStatus !== "PAID") return res.status(400).json({ success: false, message: "Refund is available only for bookings with completed payment" });
+      if (refundStatus === "REQUESTED") return res.status(400).json({ success: false, message: "Refund request is already pending for this booking" });
+      if (bookingStatus !== "CANCELLED") return res.status(400).json({ success: false, message: "Please cancel the booking first, then request refund" });
+
+      const refundReason = normalizeOptionalText(req.body?.reason, 500);
+      if (!refundReason) return res.status(400).json({ success: false, message: "Please provide a refund reason" });
+      const breakdown = calculateRefundBreakdown(booking);
+      const updatedBooking = updateFallbackBooking(booking._id, {
+        refundStatus: "REQUESTED",
+        refundReason,
+        ...breakdown,
+        refundRequestedAt: new Date().toISOString(),
+        refundRequestedBy: req.user?.id || null,
+        refundProcessedAt: null,
+        refundProcessedBy: null,
+        refundAdminNote: "",
+        refundReferenceId: ""
+      });
+      return res.status(200).json({ success: true, message: "Refund request submitted successfully", data: updatedBooking, refundSummary: breakdown, fallback: true });
+    }
+
     const booking = await Booking.findById(req.params.id);
 
     if (!booking) {
@@ -892,6 +1078,32 @@ exports.requestBookingRefund = async (req, res) => {
 ================================= */
 exports.approveRefundRequest = async (req, res) => {
   try {
+    if (isFallbackDataEnabled()) {
+      const booking = getFallbackBookingById(req.params.id);
+      if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
+      const refundStatus = getRefundStatus(booking);
+      if (normalizeStatus(booking.status) !== "CANCELLED" || !hasCompletedPayment(booking)) {
+        return res.status(400).json({ success: false, message: "Only cancelled bookings with completed payment can be refunded" });
+      }
+      if (refundStatus !== "REQUESTED") return res.status(400).json({ success: false, message: "No pending refund request found for this booking" });
+      const calculated = calculateRefundBreakdown(booking);
+      const breakdown = {
+        refundPercent: Number(booking.refundPercent || calculated.refundPercent),
+        refundDeductionAmount: Number(booking.refundDeductionAmount || calculated.refundDeductionAmount),
+        refundAmount: Number(booking.refundAmount || calculated.refundAmount)
+      };
+      const updatedBooking = updateFallbackBooking(booking._id, {
+        status: "REFUNDED",
+        refundStatus: "REFUNDED",
+        ...breakdown,
+        refundAdminNote: normalizeOptionalText(req.body?.note, 500),
+        refundReferenceId: normalizeOptionalText(req.body?.refundReferenceId, 120) || `mock_refund_${Date.now()}`,
+        refundProcessedAt: new Date().toISOString(),
+        refundProcessedBy: req.user?.id || null
+      });
+      return res.status(200).json({ success: true, message: "Refund approved and processed successfully", data: updatedBooking, refundSummary: breakdown, fallback: true });
+    }
+
     const booking = await Booking.findById(req.params.id);
 
     if (!booking) {
@@ -979,6 +1191,23 @@ exports.approveRefundRequest = async (req, res) => {
 ================================= */
 exports.rejectRefundRequest = async (req, res) => {
   try {
+    if (isFallbackDataEnabled()) {
+      const booking = getFallbackBookingById(req.params.id);
+      if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
+      if (normalizeStatus(booking.status) !== "CANCELLED" || !hasCompletedPayment(booking)) {
+        return res.status(400).json({ success: false, message: "Only cancelled bookings with completed payment can have refund requests" });
+      }
+      if (getRefundStatus(booking) !== "REQUESTED") return res.status(400).json({ success: false, message: "No pending refund request found for this booking" });
+      const updatedBooking = updateFallbackBooking(booking._id, {
+        refundStatus: "REJECTED",
+        refundAdminNote: normalizeOptionalText(req.body?.note, 500),
+        refundProcessedAt: new Date().toISOString(),
+        refundProcessedBy: req.user?.id || null,
+        refundReferenceId: ""
+      });
+      return res.status(200).json({ success: true, message: "Refund request rejected", data: updatedBooking, fallback: true });
+    }
+
     const booking = await Booking.findById(req.params.id);
 
     if (!booking) {

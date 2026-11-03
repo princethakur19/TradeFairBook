@@ -2,6 +2,7 @@ const Booking = require("../models/Booking");
 const Stall = require("../models/Stall");
 const { getDatabaseErrorMessage } = require("../utils/dbError");
 const { getAllFallbackBookings, updateFallbackBooking } = require("../data/fallbackBookings");
+const { updateFallbackStall } = require("../data/fallbackStalls");
 const { isFallbackDataEnabled } = require("../utils/fallbackMode");
 
 const BOOKING_STATUSES = ["PENDING", "APPROVED", "PAID", "REJECTED", "CANCELLED", "REFUNDED"];
@@ -107,11 +108,25 @@ exports.getAdminBookings = async (req, res) => {
 const updateBookingStatus = async (req, res, status, actionLabel) => {
   try {
     if (isFallbackDataEnabled()) {
+      const existingFallbackBooking = getAllFallbackBookings().find((item) => String(item._id) === String(req.params.id));
+      if (!existingFallbackBooking) {
+        return res.status(404).json({ success: false, message: "Booking not found" });
+      }
+      if (["PAID", "REFUNDED"].includes(normalizeStatus(existingFallbackBooking.status))) {
+        return res.status(400).json({ success: false, message: "Paid or refunded bookings cannot be modified from this action" });
+      }
+
       const fallbackBooking = updateFallbackBooking(req.params.id, { status });
       if (!fallbackBooking) {
         return res.status(404).json({
           success: false,
           message: "Booking not found"
+        });
+      }
+      const stallId = fallbackBooking.stall?._id || fallbackBooking.stall;
+      if (stallId) {
+        updateFallbackStall(stallId, {
+          status: ACTIVE_BOOKING_STATUSES.includes(status) ? "BOOKED" : "AVAILABLE"
         });
       }
 

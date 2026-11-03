@@ -23,6 +23,8 @@ const DomeReport = () => {
   const [selectedDomeId, setSelectedDomeId] = useState("");
   const [report, setReport] = useState(null);
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
   // Fetch all domes
   useEffect(() => {
@@ -30,14 +32,16 @@ const DomeReport = () => {
       try {
         const res = await api.get("/domes");
 
-        setDomes(res.data.data);
+        const loadedDomes = Array.isArray(res.data?.data) ? res.data.data : [];
+        setDomes(loadedDomes);
 
-        if (res.data.data.length > 0) {
-        setSelectedDomeId(res.data.data[0]._id);
-      }
+        if (loadedDomes.length > 0) setSelectedDomeId(loadedDomes[0]._id);
+        else setLoading(false);
 
       } catch (error) {
         console.error("Error fetching domes:", error);
+        setErrorMessage(error.response?.data?.message || "Unable to load domes.");
+        setLoading(false);
       }
     };
 
@@ -46,22 +50,42 @@ const DomeReport = () => {
 
   // Fetch report when dome changes
   useEffect(() => {
-    if (!selectedDomeId) return;
+    if (!selectedDomeId) return undefined;
+    let isMounted = true;
 
     const fetchReport = async () => {
+      setLoading(true);
+      setErrorMessage("");
+      setReport(null);
       try {
         const res = await api.get(`/reports/${selectedDomeId}`);
-        setReport(res.data);
+        if (isMounted) setReport(res.data);
       } catch (error) {
         console.error("Error fetching report:", error);
+        if (isMounted) {
+          setReport(null);
+          setErrorMessage(error.response?.data?.message || "Unable to load the dome report.");
+        }
+      } finally {
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchReport();
+    return () => { isMounted = false; };
   }, [selectedDomeId]);
 
+  if (loading && !report) {
+    return <div className="report-card"><LoadingSpinner label="Loading report..." /></div>;
+  }
+
   if (!report) {
-    return <LoadingSpinner label="Loading report..." />;
+    return (
+      <div className="report-card">
+        <h2 className="report-title">Dome Report</h2>
+        <p className="manage-feedback manage-feedback-error">{errorMessage || "No dome data is available."}</p>
+      </div>
+    );
   }
 
   const filteredBookings =

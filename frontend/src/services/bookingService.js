@@ -14,6 +14,14 @@ const writeFallbackBookings = (bookings) => {
   sessionStorage.setItem(FALLBACK_BOOKINGS_KEY, JSON.stringify(bookings));
 };
 
+const updateLocalFallbackBooking = (bookingId, updates) => {
+  const bookings = readFallbackBookings();
+  const updated = bookings.map((booking) => String(booking._id) === String(bookingId)
+    ? { ...booking, ...updates, updatedAt: new Date().toISOString() }
+    : booking);
+  writeFallbackBookings(updated);
+};
+
 export const rememberFallbackBooking = (bookingResponse) => {
   if (!bookingResponse?.fallback || !bookingResponse?.data) return;
 
@@ -58,20 +66,27 @@ export const getUserBookings = async (userId) => {
 
 export const cancelUserBooking = async (bookingId) => {
   const response = await api.delete(`/bookings/${bookingId}`);
+  updateLocalFallbackBooking(bookingId, { status: "CANCELLED" });
   return response.data;
 };
 
-export const createBookingPaymentOrder = async (bookingId) => {
-  const response = await api.post(`/bookings/${bookingId}/payment/order`);
+export const createBookingPaymentOrder = async (booking) => {
+  const bookingId = typeof booking === "object" ? booking?._id : booking;
+  const response = await api.post(`/bookings/${bookingId}/payment/order`, {
+    fallbackBooking: typeof booking === "object" ? booking : undefined
+  });
+  updateLocalFallbackBooking(bookingId, { paymentOrderId: response.data?.orderId });
   return response.data;
 };
 
 export const verifyBookingPayment = async (bookingId, paymentPayload) => {
   const response = await api.post(`/bookings/${bookingId}/payment/verify`, paymentPayload);
+  updateLocalFallbackBooking(bookingId, response.data?.data || { status: "PAID" });
   return response.data;
 };
 
 export const requestBookingRefund = async (bookingId, reason) => {
   const response = await api.post(`/bookings/${bookingId}/refund/request`, { reason });
+  updateLocalFallbackBooking(bookingId, response.data?.data || { refundStatus: "REQUESTED" });
   return response.data;
 };

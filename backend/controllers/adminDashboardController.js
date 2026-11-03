@@ -1,21 +1,37 @@
 const Booking = require("../models/Booking");
 const User = require("../models/User");
 const { getDatabaseErrorMessage } = require("../utils/dbError");
+const { getAllFallbackBookings } = require("../data/fallbackBookings");
+const defaultDomes = require("../data/defaultDomes");
 
 const REVENUE_BOOKING_STATUSES = ["PAID"];
 const isDemoAuthEnabled = () => String(process.env.DEMO_AUTH_ENABLED || "false").toLowerCase() === "true";
 
-const getFallbackStats = () => ({
-  totalUsers: 1,
-  totalBookings: 0,
-  pendingBookings: 0,
-  approvedBookings: 0,
-  paidBookings: 0,
-  refundedBookings: 0,
-  rejectedBookings: 0,
-  totalRevenue: 0,
-  revenueByDome: []
-});
+const getFallbackStats = () => {
+  const bookings = getAllFallbackBookings();
+  const countStatus = (status) => bookings.filter((booking) => String(booking.status).toUpperCase() === status).length;
+  const revenueByDome = new Map();
+  bookings.filter((booking) => String(booking.status).toUpperCase() === "PAID").forEach((booking) => {
+    const domeId = String(booking.dome?._id || booking.dome || "");
+    const domeName = defaultDomes.find((dome) => dome._id === domeId)?.domeName || "Unknown Dome";
+    revenueByDome.set(domeName, (revenueByDome.get(domeName) || 0) + Number(booking.grandTotal ?? booking.amount ?? 0));
+  });
+  const totalRevenue = bookings
+    .filter((booking) => String(booking.status).toUpperCase() === "PAID")
+    .reduce((sum, booking) => sum + Number(booking.grandTotal ?? booking.amount ?? 0), 0);
+
+  return {
+    totalUsers: new Set(bookings.map((booking) => String(booking.user?._id || booking.user || "")).filter(Boolean)).size || 1,
+    totalBookings: bookings.length,
+    pendingBookings: countStatus("PENDING"),
+    approvedBookings: countStatus("APPROVED"),
+    paidBookings: countStatus("PAID"),
+    refundedBookings: countStatus("REFUNDED"),
+    rejectedBookings: countStatus("REJECTED"),
+    totalRevenue,
+    revenueByDome: [...revenueByDome.entries()].map(([domeName, revenue]) => ({ domeName, revenue }))
+  };
+};
 
 exports.getDashboardStats = async (req, res) => {
   try {

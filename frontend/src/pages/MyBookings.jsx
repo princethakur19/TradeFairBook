@@ -220,7 +220,7 @@ const MyBookings = () => {
       setMessage("");
 
       await loadRazorpayCheckout();
-      const orderResponse = await createBookingPaymentOrder(booking._id);
+      const orderResponse = await createBookingPaymentOrder(booking);
 
       if (!window.Razorpay) {
         throw new Error("Razorpay checkout is unavailable right now.");

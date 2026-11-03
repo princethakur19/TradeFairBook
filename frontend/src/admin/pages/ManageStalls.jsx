@@ -109,7 +109,7 @@ const ManageStalls = () => {
   const filteredStalls = useMemo(
     () =>
       selectedDomeId
-        ? stallsData.filter((stall) => String(stall.dome?._id || "") === selectedDomeId)
+        ? stallsData.filter((stall) => String(stall.dome?._id || stall.dome || "") === selectedDomeId)
         : stallsData,
     [selectedDomeId, stallsData]
   );

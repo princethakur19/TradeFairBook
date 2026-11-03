@@ -4,9 +4,28 @@ const { buildDefaultStallsForDome } = require("../data/defaultStalls");
 const connectDB = require("../utils/db");
 const { getDatabaseErrorMessage } = require("../utils/dbError");
 const { isFallbackDataEnabled } = require("../utils/fallbackMode");
+const {
+  getAllFallbackStalls,
+  getFallbackStallsByDome,
+  getFallbackStallById,
+  createFallbackStalls,
+  updateFallbackStall,
+  deleteFallbackStall
+} = require("../data/fallbackStalls");
 
 exports.createStalls = async (req, res) => {
   try {
+    if (isFallbackDataEnabled()) {
+      const stalls = createFallbackStalls(req.body);
+      return res.status(201).json({
+        success: true,
+        message: "Stalls created successfully",
+        count: stalls.length,
+        data: stalls,
+        fallback: true
+      });
+    }
+
     const stalls = await Stall.insertMany(req.body, {
       ordered: false
     });
@@ -34,6 +53,16 @@ exports.createStalls = async (req, res) => {
 
 exports.getAllStalls = async (_req, res) => {
   try {
+    if (isFallbackDataEnabled()) {
+      const stalls = getAllFallbackStalls();
+      return res.status(200).json({
+        success: true,
+        count: stalls.length,
+        data: stalls,
+        fallback: true
+      });
+    }
+
     await connectDB();
 
     const stalls = await Stall.find().populate("dome", "domeName location");
@@ -57,7 +86,7 @@ exports.getStallsByDome = async (req, res) => {
       const fallbackDome = defaultDomes.find((dome) => dome._id === req.params.domeId);
 
       if (fallbackDome) {
-        const stalls = buildDefaultStallsForDome(req.params.domeId);
+        const stalls = getFallbackStallsByDome(req.params.domeId);
 
         return res.status(200).json({
           success: true,
@@ -105,6 +134,14 @@ exports.getStallsByDome = async (req, res) => {
 exports.updateStall = async (req, res) => {
   try {
     const { price, status } = req.body;
+    if (isFallbackDataEnabled()) {
+      const stall = updateFallbackStall(req.params.id, { price, status });
+      if (!stall) {
+        return res.status(404).json({ success: false, message: "Stall not found" });
+      }
+      return res.status(200).json({ success: true, message: "Stall updated successfully", data: stall, fallback: true });
+    }
+
     const stall = await Stall.findByIdAndUpdate(
       req.params.id,
       { price, status },
@@ -133,6 +170,14 @@ exports.updateStall = async (req, res) => {
 
 exports.deleteStall = async (req, res) => {
   try {
+    if (isFallbackDataEnabled()) {
+      const stall = deleteFallbackStall(req.params.id);
+      if (!stall) {
+        return res.status(404).json({ success: false, message: "Stall not found" });
+      }
+      return res.status(200).json({ success: true, message: "Stall deleted successfully", fallback: true });
+    }
+
     const stall = await Stall.findByIdAndDelete(req.params.id);
 
     if (!stall) {
@@ -156,6 +201,14 @@ exports.deleteStall = async (req, res) => {
 
 exports.getStallById = async (req, res) => {
   try {
+    if (isFallbackDataEnabled()) {
+      const stall = getFallbackStallById(req.params.id);
+      if (!stall) {
+        return res.status(404).json({ success: false, message: "Stall not found" });
+      }
+      return res.status(200).json({ success: true, data: stall, fallback: true });
+    }
+
     const stall = await Stall.findById(req.params.id).populate("dome", "domeName location");
 
     if (!stall) {

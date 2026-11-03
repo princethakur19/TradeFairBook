@@ -261,6 +261,8 @@ html, body, #root {
     width: 100%;
     max-width: 1400px; /* Full screen utility */
     padding: 40px;
+    box-sizing: border-box;
+    min-width: 0;
 }
 
 /* 4. Responsive Form Grid */
@@ -1083,15 +1085,14 @@ html, body, #root {
 
 .booking-table-wrapper {
     max-height: none;
-    overflow-y: visible;
-    overflow-x: auto;
-    padding-bottom: 4px;
+    overflow: hidden;
+    width: 100%;
 }
 
 .booking-admin-table {
     width: 100%;
-    min-width: 1320px;
-    table-layout: auto;
+    min-width: 0;
+    table-layout: fixed;
 }
 
 .booking-table-wrapper .booking-admin-table thead th {
@@ -1107,10 +1108,11 @@ html, body, #root {
 
 .booking-admin-table thead th,
 .booking-admin-table tbody td {
-    padding: 16px 12px;
+    padding: 12px 8px;
     vertical-align: middle;
-    overflow-wrap: normal;
-    word-break: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    font-size: 0.92rem;
 }
 
 .booking-admin-table thead th {
@@ -1118,47 +1120,43 @@ html, body, #root {
 }
 
 .booking-admin-table .col-user {
-    width: 180px;
+    width: 10%;
     font-weight: 700;
-    white-space: nowrap;
 }
 
 .booking-admin-table .col-email {
-    width: 260px;
+    width: 15%;
     white-space: normal;
-    word-break: break-word;
 }
 
 .booking-admin-table .col-dome {
-    width: 220px;
+    width: 13%;
     line-height: 1.35;
     white-space: normal;
 }
 
 .booking-admin-table .col-stall {
-    width: 110px;
+    width: 7%;
     white-space: nowrap;
 }
 
 .booking-admin-table .col-amount {
-    width: 150px;
+    width: 9%;
     font-weight: 700;
     white-space: nowrap;
 }
 
 .booking-admin-table .col-status {
-    width: 170px;
-    white-space: nowrap;
+    width: 14%;
 }
 
 .booking-admin-table .col-refund {
-    width: 150px;
+    width: 9%;
     white-space: nowrap;
 }
 
 .booking-admin-table .col-action {
-    width: 260px;
-    white-space: nowrap;
+    width: 23%;
 }
 
 .booking-admin-table .count-badge {
@@ -1169,25 +1167,27 @@ html, body, #root {
 
 .booking-action-buttons {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
     align-items: stretch;
 }
 
 .booking-action-buttons .edit-icon-btn {
     min-width: 0;
-    font-size: 0.9rem;
-    padding: 8px 10px;
+    font-size: 0.76rem;
+    padding: 8px 4px;
     border-radius: 8px;
-    white-space: nowrap;
+    white-space: normal;
 }
 
 .booking-status {
-    min-width: 140px;
-    font-size: 0.86rem;
+    min-width: 0;
+    max-width: 100%;
+    font-size: 0.76rem;
     text-transform: uppercase;
     letter-spacing: 0.02em;
-    white-space: nowrap;
+    white-space: normal;
+    text-align: center;
 }
 
 .booking-status.pending {
@@ -1361,13 +1361,15 @@ html, body, #root {
     border-radius: 18px;
     width: 100%;
     max-width: 1220px;
-    padding: 42px 48px;
+    padding: clamp(20px, 3vw, 40px);
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.38);
+    box-sizing: border-box;
+    min-width: 0;
 }
 
 .report-title {
-    font-size: 3.2rem;
-    margin: 0 0 30px;
+    font-size: clamp(1.8rem, 3vw, 2.8rem);
+    margin: 0 0 22px;
     color: #fff;
 }
 
@@ -1385,8 +1387,8 @@ html, body, #root {
 
 .report-metrics-grid {
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 18px;
+    grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
+    gap: 12px;
     margin-bottom: 26px;
     align-items: stretch;
 }
@@ -1395,9 +1397,9 @@ html, body, #root {
     border: 1px solid #2f3138;
     background: #202227;
     border-radius: 12px;
-    padding: 24px 22px;
+    padding: 18px 16px;
     text-align: left;
-    min-height: 150px;
+    min-height: 120px;
 }
 
 .report-metric-card span {
@@ -1410,7 +1412,7 @@ html, body, #root {
 
 .report-metric-card strong {
     color: #fff;
-    font-size: 2.5rem;
+    font-size: clamp(1.5rem, 2.2vw, 2.1rem);
 }
 
 .report-metric-card .metric-revenue {
@@ -1461,31 +1463,33 @@ html, body, #root {
     border-top: 1px solid #2a2a2a;
     border-bottom: 1px solid #2a2a2a;
     margin-bottom: 30px;
-    overflow-x: auto;
+    overflow-x: hidden;
 }
 
 .report-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
 }
 
 .report-table th,
 .report-table td {
-    padding: 16px 18px;
+    padding: 12px 10px;
     border-bottom: 1px solid #282b31;
     text-align: left;
+    overflow-wrap: anywhere;
 }
 
 .report-table th {
     color: #86a6d9;
-    font-size: 1.35rem;
+    font-size: 0.95rem;
     text-transform: uppercase;
     letter-spacing: 0.03em;
 }
 
 .report-table td {
     color: #fff;
-    font-size: 1.3rem;
+    font-size: 0.95rem;
 }
 
 .report-table tbody tr:hover {
@@ -1615,13 +1619,13 @@ html, body, #root {
     }
 
     .booking-admin-table {
-        min-width: 1080px;
-        table-layout: auto;
+        min-width: 0;
+        table-layout: fixed;
     }
 
     .booking-action-buttons .edit-icon-btn {
-        min-width: 100px;
-        padding: 8px 10px;
+        min-width: 0;
+        padding: 7px 3px;
     }
 
     .status-toggle-card {
@@ -1631,4 +1635,18 @@ html, body, #root {
     .toggle-field {
         align-items: flex-start;
     }
+}
+
+@media (max-width: 700px) {
+    .booking-admin-table .col-email,
+    .booking-admin-table .col-refund {
+        display: none;
+    }
+
+    .booking-admin-table .col-user { width: 16%; }
+    .booking-admin-table .col-dome { width: 20%; }
+    .booking-admin-table .col-stall { width: 9%; }
+    .booking-admin-table .col-amount { width: 15%; }
+    .booking-admin-table .col-status { width: 17%; }
+    .booking-admin-table .col-action { width: 23%; }
 }

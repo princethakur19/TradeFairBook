@@ -3,6 +3,21 @@ const Stall = require("../models/Stall");
 const defaultDomes = require("../data/defaultDomes");
 const connectDB = require("../utils/db");
 const { isFallbackDataEnabled } = require("../utils/fallbackMode");
+const { getAllFallbackStalls } = require("../data/fallbackStalls");
+
+const getFallbackDomes = () => {
+  const stalls = getAllFallbackStalls();
+  return defaultDomes.map((dome) => {
+    const domeStalls = stalls.filter((stall) => String(stall.dome?._id || stall.dome) === dome._id);
+    return {
+      ...dome,
+      totalStalls: domeStalls.length,
+      availableStalls: domeStalls.filter((stall) => stall.status === "AVAILABLE").length,
+      bookedStalls: domeStalls.filter((stall) => stall.status === "BOOKED").length,
+      startingPrice: domeStalls.length ? Math.min(...domeStalls.map((stall) => Number(stall.price) || 0)) : 0
+    };
+  });
+};
 
 /* =====================================================
    CREATE DOME
@@ -59,10 +74,11 @@ exports.createDome = async (req, res) => {
 exports.getAllDomes = async (req, res) => {
   try {
     if (isFallbackDataEnabled()) {
+      const domes = getFallbackDomes();
       return res.status(200).json({
         success: true,
-        count: defaultDomes.length,
-        data: defaultDomes,
+        count: domes.length,
+        data: domes,
         fallback: true
       });
     }
@@ -115,7 +131,7 @@ exports.getAllDomes = async (req, res) => {
       };
     });
 
-    const visibleDomes = domesWithStats.length ? domesWithStats : defaultDomes;
+    const visibleDomes = domesWithStats.length ? domesWithStats : getFallbackDomes();
 
     res.status(200).json({
       success: true,
@@ -125,10 +141,11 @@ exports.getAllDomes = async (req, res) => {
 
   } catch (error) {
     console.error("Get Domes Error:", error);
+    const domes = getFallbackDomes();
     res.status(200).json({
       success: true,
-      count: defaultDomes.length,
-      data: defaultDomes,
+      count: domes.length,
+      data: domes,
       fallback: true
     });
   }
@@ -141,7 +158,7 @@ exports.getAllDomes = async (req, res) => {
 exports.getDomeById = async (req, res) => {
   try {
     if (isFallbackDataEnabled()) {
-      const fallbackDome = defaultDomes.find((dome) => dome._id === req.params.id);
+      const fallbackDome = getFallbackDomes().find((dome) => dome._id === req.params.id);
 
       if (fallbackDome) {
         return res.status(200).json({

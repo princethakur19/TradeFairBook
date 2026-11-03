@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import {
   clearRedirectAfterLogin,
@@ -11,6 +11,7 @@ import "../styles/auth.css";
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [role, setRole] = useState("USER");
   const [email, setEmail] = useState("");
@@ -74,6 +75,9 @@ const Login = () => {
         <div className="auth-container">
           <h1>Login</h1>
           <p>Trade Fair Stall Booking System Accc</p>
+          {location.state?.registrationSuccess && (
+            <div className="auth-success" role="status">Account created. Please log in.</div>
+          )}
 
           <form onSubmit={handleSubmit} autoComplete="off">
             <div className="form-group" style={{ marginBottom: "16px" }}>

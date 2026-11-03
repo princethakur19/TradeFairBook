@@ -70,11 +70,25 @@ const loginWithDemoUser = ({ email, password, role }) => {
 // REGISTER (ONLY USER)
 const register = async (req, res) => {
   try {
-    const { fullname, company, email, phone, password } = req.body;
+    const fullname = String(req.body.fullname || "").trim();
+    const company = String(req.body.company || "").trim();
+    const email = String(req.body.email || "").trim().toLowerCase();
+    const phone = String(req.body.phone || "").trim();
+    const password = String(req.body.password || "");
+
+    if (!fullname || !company || !email || !phone || !password) {
+      return res.status(400).json({ msg: "Please complete all required fields." });
+    }
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(400).json({ msg: "Enter a valid email address." });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ msg: "Password must be at least 6 characters." });
+    }
 
     await connectDB();
 
-    const userExists = await User.findOne({ email });
+    const userExists = await User.exists({ email });
     if (userExists) {
       return res.status(400).json({ msg: "Email already exists" });
     }
@@ -94,7 +108,11 @@ const register = async (req, res) => {
   } catch (error) {
     console.error("Register Error:", error);
 
-    return res.status(500).json({
+    if (error.code === 11000) {
+      return res.status(409).json({ msg: "Email already exists" });
+    }
+
+    return res.status(/bad auth|authentication failed|MONGO_URI is missing|querySrv|ENOTFOUND|ETIMEOUT|ECONNREFUSED|network/i.test(String(error.message)) ? 503 : 500).json({
       msg: getDatabaseErrorMessage(error)
     });
   }

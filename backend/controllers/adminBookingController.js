@@ -1,6 +1,8 @@
 const Booking = require("../models/Booking");
 const Stall = require("../models/Stall");
 const { getDatabaseErrorMessage } = require("../utils/dbError");
+const { getAllFallbackBookings, updateFallbackBooking } = require("../data/fallbackBookings");
+const { isFallbackDataEnabled } = require("../utils/fallbackMode");
 
 const BOOKING_STATUSES = ["PENDING", "APPROVED", "PAID", "REJECTED", "CANCELLED", "REFUNDED"];
 const ACTIVE_BOOKING_STATUSES = ["PENDING", "APPROVED", "PAID"];
@@ -50,6 +52,31 @@ exports.getAdminBookings = async (req, res) => {
       filter.dome = dome;
     }
 
+    if (isFallbackDataEnabled()) {
+      let bookings = getAllFallbackBookings();
+      if (status && status !== "ALL") {
+        const statuses = status === "APPROVED" ? ["APPROVED", "PAID"] : [status];
+        bookings = bookings.filter((booking) => statuses.includes(normalizeStatus(booking.status)));
+      }
+      if (dome && dome !== "ALL") {
+        bookings = bookings.filter((booking) => String(booking.dome?._id || booking.dome) === String(dome));
+      }
+      bookings.sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt));
+
+      const total = bookings.length;
+      const pageBookings = bookings.slice(skip, skip + limit);
+      return res.status(200).json({
+        success: true,
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        count: pageBookings.length,
+        data: pageBookings,
+        fallback: true
+      });
+    }
+
     const [total, bookings] = await Promise.all([
       Booking.countDocuments(filter),
       populateBookingQuery(
@@ -79,6 +106,23 @@ exports.getAdminBookings = async (req, res) => {
 
 const updateBookingStatus = async (req, res, status, actionLabel) => {
   try {
+    if (isFallbackDataEnabled()) {
+      const fallbackBooking = updateFallbackBooking(req.params.id, { status });
+      if (!fallbackBooking) {
+        return res.status(404).json({
+          success: false,
+          message: "Booking not found"
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: `Booking ${actionLabel} successfully`,
+        data: fallbackBooking,
+        fallback: true
+      });
+    }
+
     const booking = await Booking.findById(req.params.id);
 
     if (!booking) {

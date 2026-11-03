@@ -5,6 +5,7 @@ require("dotenv").config({ path: path.join(__dirname, ".env") });
 
 const connectDB = require("./utils/db");
 const { getDatabaseErrorMessage } = require("./utils/dbError");
+const { isFallbackDataEnabled } = require("./utils/fallbackMode");
 
 const app = express();
 const isDemoAuthEnabled = () => String(process.env.DEMO_AUTH_ENABLED || "false").toLowerCase() === "true";
@@ -75,6 +76,8 @@ app.use(async (req, res, next) => {
     req.method === "POST" && req.path === "/api/aadhaar/submit",
     req.method === "POST" && (req.path === "/api/bookings/create" || req.path === "/api/bookings"),
     req.method === "GET" && req.path.startsWith("/api/bookings/user/"),
+    isFallbackDataEnabled() && req.method === "GET" && req.path === "/api/admin/bookings",
+    isFallbackDataEnabled() && req.method === "PUT" && /^\/api\/admin\/bookings\/[^/]+\/(approve|reject|cancel)$/.test(req.path),
     isDemoAuthEnabled() && req.method === "POST" && req.path === "/api/auth/login",
     isDemoAuthEnabled() && req.method === "GET" && req.path === "/api/admin/dashboard/stats"
   ];

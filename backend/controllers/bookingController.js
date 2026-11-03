@@ -91,6 +91,7 @@ const getFallbackStallMap = () => new Map(
 );
 const createFallbackBookingResponse = ({
   userId,
+  user,
   normalizedStallIds,
   aadhaarVerificationId,
   defaultMaterials,
@@ -152,7 +153,11 @@ const createFallbackBookingResponse = ({
 
     return {
       _id: `${String(stall._id).slice(0, 20)}b${String(index + 1).padStart(3, "0")}`,
-      user: userId,
+      user: {
+        _id: userId,
+        fullname: user?.fullname || "",
+        email: user?.email || ""
+      },
       stall,
       dome,
       stallPrice,
@@ -273,6 +278,7 @@ exports.createBooking = async (req, res) => {
     if (isFallbackDataEnabled()) {
       const fallbackResponse = createFallbackBookingResponse({
         userId,
+        user: req.user,
         normalizedStallIds,
         aadhaarVerificationId,
         defaultMaterials,

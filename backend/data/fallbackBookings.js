@@ -15,7 +15,29 @@ const saveFallbackBookings = (userId, bookings) => {
 
 const getFallbackBookings = (userId) => clone(fallbackBookingsByUser.get(String(userId || "")) || []);
 
+const getAllFallbackBookings = () =>
+  [...fallbackBookingsByUser.values()].flatMap((bookings) => clone(bookings));
+
+const updateFallbackBooking = (bookingId, updates) => {
+  for (const [userId, bookings] of fallbackBookingsByUser.entries()) {
+    const bookingIndex = bookings.findIndex((booking) => String(booking._id) === String(bookingId));
+    if (bookingIndex < 0) continue;
+
+    bookings[bookingIndex] = {
+      ...bookings[bookingIndex],
+      ...updates,
+      updatedAt: new Date().toISOString()
+    };
+    fallbackBookingsByUser.set(userId, bookings);
+    return clone(bookings[bookingIndex]);
+  }
+
+  return null;
+};
+
 module.exports = {
   saveFallbackBookings,
-  getFallbackBookings
+  getFallbackBookings,
+  getAllFallbackBookings,
+  updateFallbackBooking
 };

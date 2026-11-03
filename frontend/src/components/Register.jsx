@@ -15,9 +15,12 @@ const Register = () => {
     confirmPassword: "",
     terms: false,
   });
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    setError("");
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
@@ -27,33 +30,37 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (isSubmitting) return;
+
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match");
+      setError("Passwords do not match.");
       return;
     }
 
     if (!formData.terms) {
-      alert("Please accept the terms");
+      setError("Please accept the terms to create an account.");
       return;
     }
 
+    setIsSubmitting(true);
     try {
       await api.post("/auth/register", {
-        fullname: formData.fullname,
-        company: formData.company,
-        email: formData.email,
-        phone: formData.phone,
+        fullname: formData.fullname.trim(),
+        company: formData.company.trim(),
+        email: formData.email.trim().toLowerCase(),
+        phone: formData.phone.trim(),
         password: formData.password,
       });
 
-      alert("Registration successful. Please login.");
-      navigate("/");
+      navigate("/login", { state: { registrationSuccess: true } });
     } catch (err) {
-      alert(
+      setError(
         err.response?.data?.msg ||
         err.response?.data?.message ||
-        "Registration failed"
+        "Registration failed. Please try again."
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -66,9 +73,11 @@ const Register = () => {
         </div>
 
         <form onSubmit={handleSubmit}>
+          {error && <div className="auth-error" role="alert">{error}</div>}
           <div className="form-group">
             <input
               name="fullname"
+              autoComplete="name"
               className="form-input"
               placeholder="Full Name"
               value={formData.fullname}
@@ -80,6 +89,7 @@ const Register = () => {
           <div className="form-group">
             <input
               name="company"
+              autoComplete="organization"
               className="form-input"
               placeholder="Company Name"
               value={formData.company}
@@ -92,6 +102,7 @@ const Register = () => {
             <input
               name="email"
               type="email"
+              autoComplete="email"
               className="form-input"
               placeholder="Email"
               value={formData.email}
@@ -103,6 +114,8 @@ const Register = () => {
           <div className="form-group">
             <input
               name="phone"
+              type="tel"
+              autoComplete="tel"
               className="form-input"
               placeholder="Phone"
               value={formData.phone}
@@ -115,6 +128,7 @@ const Register = () => {
             <input
               name="password"
               type="password"
+              autoComplete="new-password"
               className="form-input"
               placeholder="Password"
               value={formData.password}
@@ -127,6 +141,7 @@ const Register = () => {
             <input
               name="confirmPassword"
               type="password"
+              autoComplete="new-password"
               className="form-input"
               placeholder="Confirm Password"
               value={formData.confirmPassword}
@@ -147,7 +162,9 @@ const Register = () => {
             </label>
           </div>
 
-          <button className="btn">Create Account</button>
+          <button className="btn" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Creating account…" : "Create Account"}
+          </button>
         </form>
 
         <p style={{ marginTop: "15px", textAlign: "center", color: "#0f172a" }}>
